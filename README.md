@@ -31,35 +31,32 @@ In your main analyzer:
 3.Prepare inputs after Higgs candidate is formed:
 
   leptons: 
-   Suppose Lep_Z1_1,Lep_Z1_2, Lep_Z2_1,Lep_Z2_2 are pat:Electron or pat:Muon from Z1 and Z2 decay
+   Suppose Lep_Z1_1,Lep_Z1_2, Lep_Z2_1,Lep_Z2_2 are pat:Electron or pat:Muon from Z1 and Z2 decay.
+   
    In your analyzer, do:
 
      vector<reco::Candidate *> selectedLeptons;
-
      reco::Candidate *cZ1_1 = dynamic_cast<reco::Candidate* >(&Lep_Z1_1);
      reco::Candidate *cZ1_2 = dynamic_cast<reco::Candidate* >(&Lep_Z1_2);
      reco::Candidate *cZ2_1 = dynamic_cast<reco::Candidate* >(&Lep_Z2_1);
      reco::Candidate *cZ2_2 = dynamic_cast<reco::Candidate* >(&Lep_Z2_2);
-
      selectedLeptons.push_back(cZ1_1);
      selectedLeptons.push_back(cZ1_2);
      selectedLeptons.push_back(cZ2_1);
      selectedLeptons.push_back(cZ2_2);
 
   fsrPhotons :
-     Supporse find pat::PFParticle fsrPhoton which is the fsr photon
+    Supporse find pat::PFParticle fsrPhoton which is the fsr photon.
+    To fill the array if the photon is associated to a certain lepton from Z1 or Z2 decay, 
+    do something like:
 
      pat::PFParticle * selectedFsrPhotonsArray;
-         
-     To fill the array if the photon is associated to a certain lepton from Z1 or Z2 decay, 
-     do something like:
-
      if(associateLeptonZ1_1) selectedFsrPhotonsArray[0] = fsrPhoton;
      if(associateLeptonZ1_2) selectedFsrPhotonsArray[1] = fsrPhoton;
      if(associateLeptonZ2_1) selectedFsrPhotonsArray[2] = fsrPhoton;
      if(associateLeptonZ2_2) selectedFsrPhotonsArray[3] = fsrPhoton;
  
-     Keep the order the same as vector<reco::Candidate *> selectedLeptons
+    Keep the order the same as vector<reco::Candidate *> selectedLeptons
 
 4. Setup, refit and get the refitted results:
 
@@ -67,10 +64,9 @@ In your main analyzer:
 
       kinZfitter->Setup(selectedLeptons, selectedFsrPhotonsArray);
       kinZfitter->KinRefitZ1();
-
+      
       // refit mass4l
       double mass4lREFIT = kinZfitter->GetRefitM4l();
-
       // four 4-vectors after refitting order by Z1_1,Z1_2,Z2_1,Z2_2
       vector < TLorentzVector > p4 = kinZfitter->GetRefitP4s(); 
 
