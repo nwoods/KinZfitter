@@ -147,7 +147,7 @@ double HelperFunction::pterr( reco::Candidate *c, bool isData){
 
   reco::GsfElectron *gsf; reco::Muon *mu;
 
-  double pterrLep;
+  double pterrLep = 0.0;
 
   if ((gsf = dynamic_cast<reco::GsfElectron *> (&(*c)) ) != 0)
   {
