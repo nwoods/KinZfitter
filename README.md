@@ -8,7 +8,7 @@ HelperFunction : the class that read lepton/photon pT errors by accessing the pa
 
 - Include the refit in your analyzer:
 
-0.check out package
+0.Check out package
 
   cd $CMSSW_BASE/src
   
@@ -22,11 +22,11 @@ In your main analyzer:
 
   #include "KinZfitter/KinZfitter/interface/KinZfitter.h"
 
-2.declare and then initialize the KinZfitter class for each job
+2.Declare and then initialize the KinZfitter class when initializing your analyzer
 
-  KinZfitter *kinZfitter;
-  kinZfitter = new KinZfitter(isData);
-  (In data, (isData=true). In mc (isData=false))
+    KinZfitter *kinZfitter;
+    kinZfitter = new KinZfitter(isData);
+    //(In data, (isData=true). In mc (isData=false))
 
 3.Prepare inputs after Higgs candidate is formed:
 
@@ -58,7 +58,7 @@ In your main analyzer:
  
     Keep the order the same as vector<reco::Candidate *> selectedLeptons
 
-4. Setup, refit and get the refitted results:
+4.Setup, refit and get the refitted results:
 
    In your analyzer, do
 
