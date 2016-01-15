@@ -6,7 +6,7 @@ Using Z mass kinematic constraint(s) to refit lepton momenta in H-to-ZZ*
 KinZfitter : the class read the inputs from leptons and fsr photons that form the Higgs Candidate,, do the refitting, and get the refitted results
 HelperFunction : the class that read lepton/photon pT errors by accessing the pat:Electron, pat:Muon and pat:PFPartticle and also provide the function to help calculate mass4l error (including the covariance matrix)
 
-- Include the refit in your analyzer:
+To include the refit in your analyzer:
 
 0.Check out package
 
