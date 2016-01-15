@@ -601,7 +601,6 @@ int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double 
 
     // observable set
     RooArgSet *rastmp;
-    if(p4sZ1ph_.size()==0)
       rastmp = new RooArgSet(*pT1RECO,*pT2RECO);
     if(p4sZ1ph_.size()==1)
       rastmp = new RooArgSet(*pT1RECO,*pT2RECO,*pTph1RECO);
