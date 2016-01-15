@@ -50,7 +50,7 @@ In your main analyzer:
     To fill the array if the photon is associated to a certain lepton from Z1 or Z2 decay, 
     do something like:
 
-     pat::PFParticle * selectedFsrPhotonsArray;
+     pat::PFParticle[4] selectedFsrPhotonsArray;
      if(associateLeptonZ1_1) selectedFsrPhotonsArray[0] = fsrPhoton;
      if(associateLeptonZ1_2) selectedFsrPhotonsArray[1] = fsrPhoton;
      if(associateLeptonZ2_1) selectedFsrPhotonsArray[2] = fsrPhoton;
