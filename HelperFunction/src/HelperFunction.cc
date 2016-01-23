@@ -194,8 +194,6 @@ double HelperFunction::pterr( reco::Muon* mu, bool isData){
         
         double pterr = mu->muonBestTrack()->ptError() * scaleFactormu;
 
-        delete mu_corr;
-
         return pterr;
 }
 
