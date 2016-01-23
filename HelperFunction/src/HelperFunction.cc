@@ -35,7 +35,7 @@ HelperFunction::HelperFunction()
 {
 
         //declarations
-        debug_ = 1;
+        debug_ = 0;
 
         TString fmu_s = TString(edm::FileInPath ( "KinZfitter/HelperFunction/hists/ebeOverallCorrections.Legacy2013.v0.root" ).fullPath());
         TString fel_s = TString(edm::FileInPath ( "KinZfitter/HelperFunction/hists/ebeOverallCorrections.Legacy2013.v0.root" ).fullPath());
@@ -146,6 +146,7 @@ double HelperFunction::masserror( std::vector<TLorentzVector> Lep, std::vector<d
 double HelperFunction::pterr( reco::Candidate *c, bool isData){
 
   reco::GsfElectron *gsf; reco::Muon *mu;
+  reco::PFCandidate *pf;
 
   double pterrLep = 0.0;
 
@@ -157,6 +158,11 @@ double HelperFunction::pterr( reco::Candidate *c, bool isData){
   {
     pterrLep=pterr(mu, isData);
   }
+  else if ((pf = dynamic_cast<reco::PFCandidate *> (&(*c)) ) != 0)
+  { 
+    pterrLep=pterr(c, isData);
+  }
+
 
   return pterrLep;
 
@@ -319,10 +325,13 @@ double HelperFunction::pterr( pat::Electron electron, bool isData ){
 }
 */
 
-double HelperFunction::pterr( pat::PFParticle ph){
+double HelperFunction::pterr(TLorentzVector ph){
 
-         double perr = PFEnergyResolution().getEnergyResolutionEm(ph.energy(), ph.eta());
-         double pterr = perr*ph.pt()/ph.p();
+         if(debug_) cout<<"perr for pf photon"<<endl;
+
+         double perr = PFEnergyResolution().getEnergyResolutionEm(ph.E(), ph.Eta());
+
+         double pterr = perr*ph.Pt()/ph.P();
 
          return pterr;
 }

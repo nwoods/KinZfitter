@@ -98,7 +98,7 @@ class HelperFunction
 
       //double pterr(pat::Electron electron, bool isData);
       //double pterr(pat::Muon muon, bool isData);
-      double pterr(pat::PFParticle fsrPhoton);
+      double pterr(TLorentzVector fsrPhoton);
 
       double pterr(reco::GsfElectron* electron, bool isData);
       double pterr(reco::Muon* muon, bool isData);

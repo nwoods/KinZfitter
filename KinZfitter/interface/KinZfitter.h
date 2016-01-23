@@ -44,6 +44,9 @@
 // fit result covariance matrix
 #include <TMatrixDSym.h>
 
+#include <iostream>
+#include <map>
+
 // helper function calculate lepton/pfphoton (un)corrected pT error
 class HelperFunction;
 
@@ -57,7 +60,7 @@ public:
 
 	/// Kinematic fit of lepton momenta
         /// HelperFunction class to calcluate per lepton(+photon) pT error
-        void Setup(std::vector< reco::Candidate* > selectedLeptons, pat::PFParticle selectedFsrPhotons[4]);
+        void Setup(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons);
 
         ///
         void KinRefitZ1();
@@ -67,7 +70,10 @@ public:
 
         // result wrappers
         double GetRefitM4l();
+        double GetM4l();
+
         double GetRefitM4lErr();
+        double GetM4lErr();
         double GetRefitM4lErrFullCov();
 
         // cov matrix change for spherical coordinate to Cartisean coordinates
@@ -75,6 +81,7 @@ public:
         void SetZ1BigCov();
         void SetZ2BigCov();
 
+/*
         TMatrixDSym GetRefitZ1BigCov();        
 
         // cov matrix when refitting Z2
@@ -84,9 +91,7 @@ public:
         //  
         TMatrixDSym GetRefitZZSFBigCov();
         TMatrixDSym GetRefitZZOFBigCov();
-
-        double GetM4l();
-        double GetM4lErr();
+*/
 
         std::vector<TLorentzVector> GetRefitP4s();
         std::vector<TLorentzVector> GetP4s();
@@ -112,7 +117,7 @@ private:
         /// HelperFunction class to calcluate per lepton(+photon) pT error
         HelperFunction * helperFunc_;
 
-        void initZs(std::vector< reco::Candidate* > selectedLeptons, pat::PFParticle selectedFsrPhotons[4]);
+        void initZs(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhoton);
 
         /// lepton ids for Z1 Z2
         std::vector<int> idsZ1_, idsZ2_;

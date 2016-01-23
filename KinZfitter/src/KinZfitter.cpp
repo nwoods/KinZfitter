@@ -19,7 +19,7 @@ KinZfitter::KinZfitter(bool isData)
 
      PDFName_ = "SMHiggsToZZTo4L_M-125_8TeV-powheg15-JHUgenV3-pythia6_8TeV";
 
-     debug_ = true;
+     debug_ = false;
      if( debug_ ) std::cout << "KinZfitter. The debug flag is ON\n" << std::endl;
 	
      /// Initialise HelperFunction
@@ -30,8 +30,7 @@ KinZfitter::KinZfitter(bool isData)
 }
 
 
-void KinZfitter::Setup(std::vector< reco::Candidate* > selectedLeptons, pat::PFParticle selectedFsrPhotons[4])
-{
+void KinZfitter::Setup(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons){
 
      // reset everything for each event
      idsZ1_.clear(); idsZ2_.clear();      
@@ -45,6 +44,7 @@ void KinZfitter::Setup(std::vector< reco::Candidate* > selectedLeptons, pat::PFP
 
      initZs(selectedLeptons, selectedFsrPhotons);
 
+     if(debug_) cout<<"list ids"<<endl;
      if(debug_) cout<<"IDs[0] "<<idsZ1_[0]<<" IDs[1] "<<idsZ1_[1]<<" IDs[2] "<<idsZ2_[0]<<" IDs[3] "<<idsZ2_[1]<<endl;
 
      fs_=""; 
@@ -93,7 +93,9 @@ void KinZfitter::Setup(std::vector< reco::Candidate* > selectedLeptons, pat::PFP
 ///----------------------------------------------------------------------------------------------
 ///----------------------------------------------------------------------------------------------
 
-void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, pat::PFParticle selectedFsrPhotons[4]){
+void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons){
+
+        if(debug_) cout<<"init leptons"<<endl;
 
         for(unsigned int il = 0; il<selectedLeptons.size(); il++)
          {
@@ -104,9 +106,7 @@ void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, pat::PF
             p4.SetPxPyPzE(c->px(),c->py(),c->pz(),c->energy());  
             int pdgId = c->pdgId();
 
-            //if(debug_) cout<<"pdgId"<<endl; 
-            //if(c->isElectron()) pdgId = -11*c->charge() ;
-            //if(c->isMuon()) pdgId = -13*c->charge() ;
+            if(debug_) cout<<"pdg id "<<pdgId<<endl;
 
             if(il<2){
               idsZ1_.push_back(pdgId);
@@ -123,55 +123,40 @@ void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, pat::PF
 
          }
 
-/*
-        int *pint = NULL;
-        int array[4];
-        pint = array;
-        if(debug_) cout<<"The value of pointer is "<<pint<<endl;
-
-        pat::PFParticle * p;
-        p = selectedFsrPhotons;
-        if(debug_) cout<<"The value of pointer is "<<p<<endl;
-*/          
+        if(debug_) cout<<"init fsr photons"<<endl;
 
         for(unsigned int ifsr = 0; ifsr<4; ifsr++)
          {
 
-            TLorentzVector p4;
-            p4.SetPxPyPzE(selectedFsrPhotons[ifsr].px(),selectedFsrPhotons[ifsr].py(),
-                              selectedFsrPhotons[ifsr].pz(),selectedFsrPhotons[ifsr].energy());
+            TLorentzVector p4 = selectedFsrPhotons[ifsr];
+            if(selectedFsrPhotons[ifsr].Pt()==0) continue;
 
-            double pT = p4.Pt();
-            //if(debug_) cout<<"pT of fsr photon is "<<pT<<endl;
+            if(debug_) cout<<"ifsr "<<ifsr<<endl;
 
-            if(pT!=0){
+            double pTerr = 0;
 
-              double pTerr = 0; 
-              pTerr = helperFunc_->pterr(selectedFsrPhotons[ifsr]);
+            pTerr = helperFunc_->pterr(p4); //,isData_);
 
-              if(ifsr<2){
+            if(debug_) cout<<" pt err is "<<pTerr<<endl;
+
+            if(ifsr<2){
+
+                if(debug_) cout<<"for fsr Z1 photon"<<endl;
 
                 pTerrsZ1ph_.push_back(pTerr);
                 p4sZ1ph_.push_back(p4);
                 idsFsrZ1_.push_back(idsZ1_[ifsr]);
 
               }
-              else{
+            else{
+
+                if(debug_) cout<<"for fsr Z2 photon"<<endl;
 
                 pTerrsZ2ph_.push_back(pTerr);
-
-                p4.SetPxPyPzE(selectedFsrPhotons[ifsr].px(),selectedFsrPhotons[ifsr].py(),
-                              selectedFsrPhotons[ifsr].pz(),selectedFsrPhotons[ifsr].energy());
-
                 p4sZ2ph_.push_back(p4);
                 idsFsrZ2_.push_back(idsZ2_[ifsr-2]);
 
-              }
-
-             
-           }
-
-           //p++;
+            }
 
          }
 
@@ -275,33 +260,130 @@ double KinZfitter::GetRefitM4lErr()
 double KinZfitter::GetRefitM4lErrFullCov()
 {
 
+
+  vector<TLorentzVector> Lp4s = GetRefitP4s();
   vector<TLorentzVector> p4s;
   vector<double> pTErrs;
 
   p4s.push_back(p4sZ1REFIT_[0]);p4s.push_back(p4sZ1REFIT_[1]);
-  p4s.push_back(p4sZ2REFIT_[0]);p4s.push_back(p4sZ2REFIT_[1]);
-
   pTErrs.push_back(pTerrsZ1REFIT_[0]); pTErrs.push_back(pTerrsZ1REFIT_[1]);
+
+  if(p4sZ1phREFIT_.size()>=1){
+   p4s.push_back(p4sZ1phREFIT_[0]); pTErrs.push_back(pTerrsZ1phREFIT_[0]);
+  } 
+  if(p4sZ1phREFIT_.size()==2){
+   p4s.push_back(p4sZ1phREFIT_[1]); pTErrs.push_back(pTerrsZ1phREFIT_[1]);
+  }
+
+  p4s.push_back(p4sZ2REFIT_[0]);p4s.push_back(p4sZ2REFIT_[1]);
   pTErrs.push_back(pTerrsZ2REFIT_[0]); pTErrs.push_back(pTerrsZ2REFIT_[1]);
 
-  for(unsigned int ifsr1 = 0; ifsr1<p4sZ1phREFIT_.size(); ifsr1++){
-
-      p4s.push_back(p4sZ1phREFIT_[ifsr1]);
-      pTErrs.push_back(pTerrsZ1phREFIT_[ifsr1]);
-      
+  if(p4sZ2phREFIT_.size()>=1){
+   p4s.push_back(p4sZ2phREFIT_[0]); pTErrs.push_back(pTerrsZ2phREFIT_[0]);
+  }
+  if(p4sZ2phREFIT_.size()==2){
+   p4s.push_back(p4sZ2phREFIT_[1]); pTErrs.push_back(pTerrsZ2phREFIT_[1]);
   }
 
-  for(unsigned int ifsr2 = 0; ifsr2<p4sZ2phREFIT_.size(); ifsr2++){
+  double errorUncorr = helperFunc_->masserror(p4s,pTErrs);
+
+  vector<double> pTErrs1; vector<double> pTErrs2;
+  for(unsigned int i = 0; i<pTErrs.size(); i++){
+     if(i==0) pTErrs1.push_back(pTErrs[i]);
+     else pTErrs1.push_back(0.0);
+  }
+  for(unsigned int i = 0; i<pTErrs.size(); i++){
+     if(i==1) pTErrs2.push_back(pTErrs[i]);
+     else pTErrs2.push_back(0.0);
+  }
+
+  double error1 = helperFunc_->masserror(p4s,pTErrs1);
+  double error2 = helperFunc_->masserror(p4s,pTErrs2);
+
+  double errorph1 = 0.0; double errorph2 = 0.0; 
+  if(p4sZ2phREFIT_.size()>=1){ 
+ 
+   vector<double> pTErrsph1;
+   for(unsigned int i = 0; i<pTErrs.size(); i++){
+     if(i==2) pTErrsph1.push_back(pTErrs[i]);
+     else pTErrsph1.push_back(0.0);
+   }
+
+   errorph1 = helperFunc_->masserror(p4s,pTErrsph1);
+
+  }
+
+  if(p4sZ2phREFIT_.size()>=2){
+
+   vector<double> pTErrsph2;
+   for(unsigned int i = 0; i<pTErrs.size(); i++){
+     if(i==3) pTErrsph2.push_back(pTErrs[i]);
+     else pTErrsph2.push_back(0.0);
+   }
   
-      p4s.push_back(p4sZ2phREFIT_[ifsr2]);
-      pTErrs.push_back(pTerrsZ2phREFIT_[ifsr2]);
+   errorph2 = helperFunc_->masserror(p4s,pTErrsph2);  
 
   }
 
-  return helperFunc_->masserror(p4s,pTErrs);
+  if(debug_) cout<<"error1 "<<error1<<" error2 "<<error2<<endl;
+
+  ////
+  // covariance matrix
+
+  double delta12 = error1*error2*covMatrixZ1_(0,1)/sqrt(covMatrixZ1_(0,0)*covMatrixZ1_(1,1));
+  double delta1ph1 = 0.0; double delta1ph2 = 0.0;
+  double delta2ph1 = 0.0; double delta2ph2 = 0.0;
+  double deltaph1ph2 = 0.0;
+
+  if(p4sZ1phREFIT_.size()>=1){
+     delta1ph1 = error1*errorph1*covMatrixZ1_(0,2)/sqrt(covMatrixZ1_(0,0)*covMatrixZ1_(2,2));
+     delta2ph1 = error2*errorph1*covMatrixZ1_(1,2)/sqrt(covMatrixZ1_(1,1)*covMatrixZ1_(2,2));
+  }
+
+  if(p4sZ1phREFIT_.size()>=2){
+     delta1ph2 = error1*errorph2*covMatrixZ1_(0,3)/sqrt(covMatrixZ1_(0,0)*covMatrixZ1_(3,3));
+     delta2ph2 = error2*errorph2*covMatrixZ1_(1,3)/sqrt(covMatrixZ1_(1,1)*covMatrixZ1_(3,3));
+     delta1ph2 = errorph1*errorph2*covMatrixZ1_(2,3)/sqrt(covMatrixZ1_(2,2)*covMatrixZ1_(3,3));
+  }
+
+
+  double correlation = delta12+delta1ph1+delta1ph2+delta2ph1+delta2ph2+deltaph1ph2;
+
+  double err = sqrt(errorUncorr*errorUncorr+correlation);
+
+  return err;
   
 }
 
+double KinZfitter::GetM4lErr()
+{
+  
+  vector<TLorentzVector> p4s;
+  vector<double> pTErrs;
+  
+  p4s.push_back(p4sZ1_[0]);p4s.push_back(p4sZ1_[1]);
+  p4s.push_back(p4sZ2_[0]);p4s.push_back(p4sZ2_[1]);
+  
+  pTErrs.push_back(pTerrsZ1_[0]); pTErrs.push_back(pTerrsZ1_[1]);
+  pTErrs.push_back(pTerrsZ2_[0]); pTErrs.push_back(pTerrsZ2_[1]);
+  
+  for(unsigned int ifsr1 = 0; ifsr1<p4sZ1ph_.size(); ifsr1++){
+      
+      p4s.push_back(p4sZ1ph_[ifsr1]);
+      pTErrs.push_back(pTerrsZ1ph_[ifsr1]);
+  
+  }
+  
+  for(unsigned int ifsr2 = 0; ifsr2<p4sZ2ph_.size(); ifsr2++){
+      
+      p4s.push_back(p4sZ2ph_[ifsr2]);
+      pTErrs.push_back(pTerrsZ2ph_[ifsr2]);
+  
+  }
+  
+  return helperFunc_->masserror(p4s,pTErrs);
+
+}
 
 vector<TLorentzVector> KinZfitter::GetRefitP4s()
 {
