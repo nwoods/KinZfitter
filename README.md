@@ -17,6 +17,8 @@ To include the refit in your analyzer:
   scram b -j 8 
 
 In your main analyzer:
+0. Add the package into your BuildFile.xml
+   <use   name="KinZfitter/KinZfitter"/>
 
 1.include the head file
 
