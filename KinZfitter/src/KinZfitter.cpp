@@ -696,7 +696,7 @@ int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double 
     //nll = PDFRelBWxCBxgauss->createNLL(*pTs);
     //RooMinuit(*nll).migrad();
 
-    RooFitResult* r = PDFRelBWxCBxgauss->fitTo(*pTs,RooFit::Save());
+    RooFitResult* r = PDFRelBWxCBxgauss->fitTo(*pTs,RooFit::Save(),RooFit::PrintLevel(-1));
     const TMatrixDSym& covMatrix = r->covarianceMatrix();
    
     const RooArgList& finalPars = r->floatParsFinal();
