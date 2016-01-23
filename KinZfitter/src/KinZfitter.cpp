@@ -17,10 +17,20 @@
 KinZfitter::KinZfitter(bool isData)
 {    
 
+#if CMSSW_VERSION<720
+
      PDFName_ = "SMHiggsToZZTo4L_M-125_8TeV-powheg15-JHUgenV3-pythia6_8TeV";
 
+#else
+
+     PDFName_ = "GluGluHToZZTo4L_M125_13TeV_powheg2_JHUgenV6_pythia8";
+
+#endif
+
+
      debug_ = false;
-     if( debug_ ) std::cout << "KinZfitter. The debug flag is ON\n" << std::endl;
+
+     if(debug_) std::cout << "KinZfitter. The debug flag is ON with "<<PDFName_<< std::endl;
 	
      /// Initialise HelperFunction
      helperFunc_ = new HelperFunction();
@@ -696,7 +706,7 @@ int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double 
     //nll = PDFRelBWxCBxgauss->createNLL(*pTs);
     //RooMinuit(*nll).migrad();
 
-    RooFitResult* r = PDFRelBWxCBxgauss->fitTo(*pTs,RooFit::Save());
+    RooFitResult* r = PDFRelBWxCBxgauss->fitTo(*pTs,RooFit::Save(),RooFit::PrintLevel(-1));
     const TMatrixDSym& covMatrix = r->covarianceMatrix();
    
     const RooArgList& finalPars = r->floatParsFinal();
