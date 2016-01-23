@@ -170,6 +170,9 @@ double HelperFunction::pterr( reco::Candidate *c, bool isData){
 
 double HelperFunction::pterr( reco::Muon* mu, bool isData){
 
+        double scaleFactormu = 1.0;
+
+/*
         TH2F* mu_corr;
         if(isData) mu_corr = dynamic_cast<TH2F*> (muon_corr_data->Clone());
         else mu_corr = dynamic_cast<TH2F*> (muon_corr_mc->Clone());
@@ -177,7 +180,6 @@ double HelperFunction::pterr( reco::Muon* mu, bool isData){
         TAxis* x_mupTaxis = mu_corr->GetXaxis(); TAxis* y_muetaaxis = mu_corr->GetYaxis();
         double maxPt = x_mupTaxis->GetXmax(); double minPt = x_mupTaxis->GetXmin();
 
-        double scaleFactormu = 1.0;
         int xbin = x_mupTaxis->FindBin(mu->pt()); int ybin = y_muetaaxis->FindBin(fabs(mu->eta()));
         if(mu->pt()>minPt && mu->pt()<maxPt){  scaleFactormu = mu_corr->GetBinContent(xbin,ybin);  }
 
@@ -187,8 +189,9 @@ double HelperFunction::pterr( reco::Muon* mu, bool isData){
          if(debug_) cout<<"For run-II analysis, for the moment use uncorrected mu error from CMSSW"<<endl;
          scaleFactormu = 1.0;
 #endif
+*/
 
-
+        
         double pterr = mu->muonBestTrack()->ptError() * scaleFactormu;
 
         delete mu_corr;
@@ -220,6 +223,7 @@ double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
 
         if(debug_) cout<<"reco:gsfelectron pt err"<<endl; 
 
+/*
         TH2F* el_corr;
         if(isData) el_corr = dynamic_cast<TH2F*>(electron_corr_data->Clone());
         else el_corr = dynamic_cast<TH2F*>(electron_corr_mc->Clone());
@@ -252,16 +256,18 @@ double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
                         }
                         perr = ecalEnergy * sqrt(err2);
          }
-         
+*/         
          double scaleFactor_el = 1.0;
          
+/*
          int xbin = x_elpTaxis->FindBin(elec->pt()); int ybin = y_eletaaxis->FindBin(fabs(elec->eta()));  
          if(elec->pt()>minPt && elec->pt()<maxPt ){  scaleFactor_el = el_corr->GetBinContent(xbin,ybin);  }
          
+*/
          double pterr = scaleFactor_el*(perr*elec->pt()/elec->p());
 
-         double pterrFinal = 0.0;
-
+         double pterrFinal = pterr;
+/*
 #if CMSSW_VERSION<720
          if(debug_) cout<<"Correction on el pT error using 8TeV result"<<endl;
          pterrFinal = pterr;
@@ -271,7 +277,7 @@ double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
 #endif
 
          delete el_corr;
-         
+*/         
          return pterrFinal;
 
 }

@@ -17,16 +17,7 @@
 KinZfitter::KinZfitter(bool isData)
 {    
 
-#if CMSSW_VERSION<720
-
-     PDFName_ = "SMHiggsToZZTo4L_M-125_8TeV-powheg15-JHUgenV3-pythia6_8TeV";
-
-#else
-
      PDFName_ = "GluGluHToZZTo4L_M125_13TeV_powheg2_JHUgenV6_pythia8";
-
-#endif
-
 
      debug_ = false;
 
