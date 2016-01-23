@@ -18,8 +18,7 @@ To include the refit in your analyzer:
 
 In your main analyzer:
 
-
-0. Add the package into your BuildFile.xml
+0.Add the package into your BuildFile.xml
    <use   name="KinZfitter/KinZfitter"/>
 
 1.include the head file
