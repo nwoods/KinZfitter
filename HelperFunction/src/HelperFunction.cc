@@ -262,6 +262,7 @@ double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
          if(elec->pt()>minPt && elec->pt()<maxPt ){  scaleFactor_el = el_corr->GetBinContent(xbin,ybin);  }
          
 */
+         double perr = elec->p4Error(reco::GsfElectron::P4_COMBINATION);
          double pterr = scaleFactor_el*(perr*elec->pt()/elec->p());
 
          double pterrFinal = pterr;
