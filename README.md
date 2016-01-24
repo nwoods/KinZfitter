@@ -59,7 +59,8 @@ In your main analyzer:
      if(associateLeptonZ2_1) selectedFsrMap[2] = fsrPhoton.p4();
      if(associateLeptonZ2_2) selectedFsrMap[3] = fsrPhoton.p4();
  
-    Keep the order the same as vector<reco::Candidate *> selectedLeptons
+    the key of the map stand for the position of leptons in selectedLeptons vector,
+    and the value is the TLorentzVector of the fsr photon 4-vector.
 
 4.Setup, refit and get the refitted results:
 
