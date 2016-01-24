@@ -53,11 +53,11 @@ In your main analyzer:
     To fill the array if the photon is associated to a certain lepton from Z1 or Z2 decay, 
     do something like:
 
-     pat::PFParticle[4] selectedFsrPhotonsArray;
-     if(associateLeptonZ1_1) selectedFsrPhotonsArray[0] = fsrPhoton;
-     if(associateLeptonZ1_2) selectedFsrPhotonsArray[1] = fsrPhoton;
-     if(associateLeptonZ2_1) selectedFsrPhotonsArray[2] = fsrPhoton;
-     if(associateLeptonZ2_2) selectedFsrPhotonsArray[3] = fsrPhoton;
+     std::map<unsigned int, TLorentzVector> selectedFsrMap;
+     if(associateLeptonZ1_1) selectedFsrMap[0] = fsrPhoton.p4();
+     if(associateLeptonZ1_2) selectedFsrMap[1] = fsrPhoton.p4();
+     if(associateLeptonZ2_1) selectedFsrMap[2] = fsrPhoton.p4();
+     if(associateLeptonZ2_2) selectedFsrMap[3] = fsrPhoton.p4();
  
     Keep the order the same as vector<reco::Candidate *> selectedLeptons
 
