@@ -26,7 +26,7 @@ In your main analyzer:
   #include "KinZfitter/KinZfitter/interface/KinZfitter.h"
 
 2.Declare and then initialize the KinZfitter class when initializing your analyzer
-
+  i.e., declare and initialize in beginJob() in EDAnalyzer framework
     KinZfitter *kinZfitter;
     kinZfitter = new KinZfitter(isData);
     //(In data, (isData=true). In mc (isData=false))
@@ -53,13 +53,15 @@ In your main analyzer:
     To fill the array if the photon is associated to a certain lepton from Z1 or Z2 decay, 
     do something like:
 
+     TLorentzVector p4FSR(fsrPhoton.px(),fsrPhoton.py(),fsrPhoton.pz(),fsrPhoton.energy);
+
      std::map<unsigned int, TLorentzVector> selectedFsrMap;
-     if(associateLeptonZ1_1) selectedFsrMap[0] = fsrPhoton.p4();
-     if(associateLeptonZ1_2) selectedFsrMap[1] = fsrPhoton.p4();
-     if(associateLeptonZ2_1) selectedFsrMap[2] = fsrPhoton.p4();
-     if(associateLeptonZ2_2) selectedFsrMap[3] = fsrPhoton.p4();
+     if(associateLeptonZ1_1) selectedFsrMap[0] = p4FSR;
+     if(associateLeptonZ1_2) selectedFsrMap[1] = p4FSR;
+     if(associateLeptonZ2_1) selectedFsrMap[2] = p4FSR;
+     if(associateLeptonZ2_2) selectedFsrMap[3] = p4FSR;
  
-    the key of the map stand for the position of leptons in selectedLeptons vector,
+    the key of the map stands for the position of leptons in selectedLeptons vector,
     and the value is the TLorentzVector of the fsr photon 4-vector.
 
 4.Setup, refit and get the refitted results:
