@@ -68,13 +68,15 @@ In your main analyzer:
 
    In your analyzer, do
 
-      kinZfitter->Setup(selectedLeptons, selectedFsrPhotonsArray);
+      kinZfitter->Setup(selectedLeptons, selectedFsrMap);
       kinZfitter->KinRefitZ1();
       
       // refit mass4l
       double mass4lREFIT = kinZfitter->GetRefitM4l();
       // four 4-vectors after refitting order by Z1_1,Z1_2,Z2_1,Z2_2
       vector < TLorentzVector > p4 = kinZfitter->GetRefitP4s(); 
+      // refitted mass4l error
+      double mass4lErrREFIT = kinZfitter->GetRefitM4lErrFullCov();
 
   There is a function called GetRefitM4lErr() which calculates mass4l error after refitting 
   assuming that all lepton momenta are UNcorrelated 
