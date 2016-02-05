@@ -263,6 +263,9 @@ double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
          
 */
          double perr = elec->p4Error(reco::GsfElectron::P4_COMBINATION);
+         
+         if(perr>elec->p()) perr = elec->p();
+         
          double pterr = scaleFactor_el*(perr*elec->pt()/elec->p());
 
          double pterrFinal = pterr;
