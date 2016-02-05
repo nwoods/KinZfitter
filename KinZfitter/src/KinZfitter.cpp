@@ -237,6 +237,9 @@ double KinZfitter::GetRefitM4lErr()
   p4s.push_back(p4sZ1REFIT_[0]);p4s.push_back(p4sZ1REFIT_[1]);
   p4s.push_back(p4sZ2REFIT_[0]);p4s.push_back(p4sZ2REFIT_[1]);
 
+  if(pTerrsZ1REFIT_[0]==0||pTerrsZ1REFIT_[1]==0)
+   return GetM4lErr();
+
   pTErrs.push_back(pTerrsZ1REFIT_[0]); pTErrs.push_back(pTerrsZ1REFIT_[1]);
   pTErrs.push_back(pTerrsZ2REFIT_[0]); pTErrs.push_back(pTerrsZ2REFIT_[1]);
 
@@ -268,6 +271,9 @@ double KinZfitter::GetRefitM4lErrFullCov()
 
   p4s.push_back(p4sZ1REFIT_[0]);p4s.push_back(p4sZ1REFIT_[1]);
   pTErrs.push_back(pTerrsZ1REFIT_[0]); pTErrs.push_back(pTerrsZ1REFIT_[1]);
+
+  if(pTerrsZ1REFIT_[0]==0||pTerrsZ1REFIT_[1]==0)
+   return GetM4lErr();
 
   if(p4sZ1phREFIT_.size()>=1){
    p4s.push_back(p4sZ1phREFIT_[0]); pTErrs.push_back(pTerrsZ1phREFIT_[0]);
