@@ -71,7 +71,9 @@ public:
         // result wrappers
         double GetRefitM4l();
         double GetM4l();
+        double GetRefitMZ1();
 
+        double GetMZ1Err();
         double GetRefitM4lErr();
         double GetM4lErr();
         double GetRefitM4lErrFullCov();
