@@ -199,9 +199,28 @@ double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
 
         if(debug_) cout<<"reco:gsfelectron pt err"<<endl; 
 
-        double perr = elec->p4Error(reco::GsfElectron::P4_COMBINATION);
-         
-        if(perr>elec->p()) perr = elec->p();
+        double perr = elec->p();
+
+        if (elec->ecalDriven())
+           perr = elec->p4Error(reco::GsfElectron::P4_COMBINATION);         
+
+        else{
+
+                 double ecalEnergy = elec->correctedEcalEnergy() ;
+
+                 double err2 = 0.0;
+                 if (elec->isEB()) {
+                        err2 += (5.24e-02*5.24e-02)/ecalEnergy;
+                        err2 += (2.01e-01*2.01e-01)/(ecalEnergy*ecalEnergy);
+                        err2 += 1.00e-02*1.00e-02;
+                 } else if (elec->isEE()) {
+                        err2 += (1.46e-01*1.46e-01)/ecalEnergy;
+                        err2 += (9.21e-01*9.21e-01)/(ecalEnergy*ecalEnergy);
+                        err2 += 1.94e-03*1.94e-03;
+                 }
+                 perr = ecalEnergy * sqrt(err2);
+
+        }
          
         double pterr = perr*elec->pt()/elec->p();
 
