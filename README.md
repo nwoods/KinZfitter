@@ -83,7 +83,15 @@ In your main analyzer:
   which is good approximation for reco lepton momenta BUT UNTRUE for refitted lepton momenta.
   This function will be extended to calculated the mass4l using full covariance matrix soon.
 
+5.Support functions
 
+  massZ1REFIT
+  
+  double massZ1REFIT = kinZfitter->GetRefitMZ1();
+  
+  massZ1Err
+
+  double massZ1Err = kinZfitter->GetMZ1Err();
 
 
 
