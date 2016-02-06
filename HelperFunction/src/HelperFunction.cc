@@ -201,13 +201,14 @@ double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
 
         double perr = elec->p();
 
-        if (elec->ecalDriven())
+        if (elec->ecalDriven()){
            perr = elec->p4Error(reco::GsfElectron::P4_COMBINATION);         
-
+        }
         else{
 
                  double ecalEnergy = elec->correctedEcalEnergy() ;
 
+                 if(debug_)cout<<"ecalEnergy "<<ecalEnergy<<endl;
                  double err2 = 0.0;
                  if (elec->isEB()) {
                         err2 += (5.24e-02*5.24e-02)/ecalEnergy;
