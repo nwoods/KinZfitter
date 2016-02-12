@@ -15,6 +15,7 @@ To include the refit in your analyzer:
   git clone https://github.com/tocheng/KinZfitter.git
    
   cd KinZfitter
+  
   git checkout -b from-v1.0 v1.0
   
   cd ../
