@@ -13,8 +13,12 @@ To include the refit in your analyzer:
   cd $CMSSW_BASE/src
   
   git clone https://github.com/tocheng/KinZfitter.git
-  
+  # update to tag from Moriond 2016 
+  cd KinZfitter
+  git checkout -b from-v1.0 v1.0
   scram b -j 8 
+  
+  (Tag for Moriond 2016 will be named as v1.x )
 
 In your main analyzer:
 
