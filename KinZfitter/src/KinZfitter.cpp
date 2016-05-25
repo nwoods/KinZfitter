@@ -165,15 +165,22 @@ void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, std::ma
   
 }
 
-void KinZfitter::SetZ1Result(double l1, double l2, double lph1, double lph2)
+void KinZfitter::SetZResult(double l1, double l2, double lph1, double lph2, 
+                            double l3, double l4, double lph3, double lph4)
 {
 
-  if(debug_) cout<<"start set Z1 result"<<endl;
+  if(debug_) cout<<"start set Z result"<<endl;
 
   // pT scale after refitting w.r.t. reco pT
+
   lZ1_l1_ = l1; lZ1_l2_ = l2;
+  lZ2_l1_ = l3; lZ2_l2_ = l4;
+
   if(debug_) cout<<"l1 "<<l1<<" l2 "<<l2<<endl;
+  if(debug_) cout<<"l3 "<<l3<<" l4 "<<l4<<endl;
+
   lZ1_ph1_ = lph1; lZ1_ph2_ = lph2;
+  lZ2_ph1_ = lph1; lZ2_ph2_ = lph2;
 
   TLorentzVector Z1_1 = p4sZ1_[0]; TLorentzVector Z1_2 = p4sZ1_[1];
   TLorentzVector Z2_1 = p4sZ2_[0]; TLorentzVector Z2_2 = p4sZ2_[1];
@@ -183,9 +190,15 @@ void KinZfitter::SetZ1Result(double l1, double l2, double lph1, double lph2)
   TLorentzVector Z1_2_True(0,0,0,0);
   Z1_2_True.SetPtEtaPhiM(lZ1_l2_*Z1_2.Pt(),Z1_2.Eta(),Z1_2.Phi(),Z1_2.M());
 
-  p4sZ1REFIT_.push_back(Z1_1_True); p4sZ1REFIT_.push_back(Z1_2_True);
+  TLorentzVector Z2_1_True(0,0,0,0);
+  Z2_1_True.SetPtEtaPhiM(lZ2_l1_*Z2_1.Pt(),Z2_1.Eta(),Z2_1.Phi(),Z2_1.M());
+  TLorentzVector Z2_2_True(0,0,0,0);
+  Z2_2_True.SetPtEtaPhiM(lZ2_l2_*Z2_2.Pt(),Z2_2.Eta(),Z2_2.Phi(),Z2_2.M());
 
-  for(unsigned int ifsr1 = 0; ifsr1<p4sZ1ph_.size(); ifsr1++){
+  p4sZ1REFIT_.push_back(Z1_1_True); p4sZ1REFIT_.push_back(Z1_2_True);
+  p4sZ2REFIT_.push_back(Z2_1_True); p4sZ2REFIT_.push_back(Z2_2_True);
+
+  for(unsigned int ifsr1 = 0; ifsr1 < p4sZ1ph_.size(); ifsr1++){
 
       TLorentzVector Z1ph = p4sZ1ph_[ifsr1];
       TLorentzVector Z1phTrue(0,0,0,0);
@@ -200,13 +213,20 @@ void KinZfitter::SetZ1Result(double l1, double l2, double lph1, double lph2)
   }
 
   // since it is Z1 refit result, Z2 kinematics keep at what it is 
-  p4sZ2REFIT_.push_back(p4sZ2_[0]); p4sZ2REFIT_.push_back(p4sZ2_[1]);
-  pTerrsZ2REFIT_.push_back(pTerrsZ2_[0]); pTerrsZ2REFIT_.push_back(pTerrsZ2_[1]);
+//  p4sZ2REFIT_.push_back(p4sZ2_[0]); p4sZ2REFIT_.push_back(p4sZ2_[1]);
+//  pTerrsZ2REFIT_.push_back(pTerrsZ2_[0]); pTerrsZ2REFIT_.push_back(pTerrsZ2_[1]);
 
-  for(unsigned int iz2 = 0; iz2 < p4sZ2ph_.size(); iz2++){
+  for(unsigned int ifsr2 = 0; ifsr2 < p4sZ2ph_.size(); ifsr2++){
 
-     p4sZ2phREFIT_.push_back(p4sZ2ph_[iz2]);
-     pTerrsZ2phREFIT_.push_back(pTerrsZ2ph_[iz2]);
+      TLorentzVector Z2ph = p4sZ2ph_[ifsr2];
+      TLorentzVector Z2phTrue(0,0,0,0);
+
+      double l = 1.0;
+      if(ifsr2==0) l = lZ2_ph1_; if(ifsr2==1) l = lZ2_ph2_;
+
+      Z2phTrue.SetPtEtaPhiM(l*Z2ph.Pt(),Z2ph.Eta(),Z2ph.Phi(),Z2ph.M());
+
+      p4sZ2phREFIT_.push_back(Z2phTrue);
 
   }
 
@@ -511,20 +531,19 @@ void KinZfitter::KinRefitZ1()
   l1 = 1.0; l2 = 1.0; lph1 = 1.0; lph2 = 1.0;
   l1 = 1.0; l2 = 1.0; lph1 = 1.0; lph2 = 1.0;
 
-  SetFitInput();
-  SetFitInput();
+  SetFitInput(fitInput1, p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_);
+  SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
 
-  Driver();
-  Driver();
+  Driver(fitInput1, fitOutput1);
+  Driver(fitInput2, fitOutput2);
 
-  SetFitOutput();
-  SetFitOutput();
+  SetFitOutput(fitInput1, fitOutput1, l1, l2, lph1, lph2, pTerrsZ1REFIT_, pTerrsZ1phREFIT_, covMatrixZ1_);
+  SetFitOutput(fitInput2, fitOutput2, l3, l4, lph3, lph4, pTerrsZ2REFIT_, pTerrsZ2phREFIT_, covMatrixZ2_);
 
   if(debug_) cout<<"l1 "<<l1<<"; l2 "<<l2<<" lph1 "<<lph1<<" lph2 "<<lph2<<endl;
   if(debug_) cout<<"l3 "<<l3<<"; l4 "<<l4<<" lph3 "<<lph3<<" lph4 "<<lph4<<endl;
 
-  SetZ1Result(l1,l2,lph1,lph2);
-  SetZ1Result(l1,l2,lph1,lph2);
+  SetZResult(l1, l2, lph1, lph2, l3, l4, lph3, lph4);
 
   if(debug_) cout<<"Z refit done"<<endl;
 }
@@ -534,6 +553,72 @@ void  KinZfitter::Driver(KinZfitter::FitInput &input, KinZfitter::FitOutput &out
       RooWorkspace w("w");
       MakeModel(w, input);
       UseModel(w, output, input.nFsr);
+
+}
+
+
+void  KinZfitter::SetFitInput(KinZfitter::FitInput input, 
+                              vector<TLorentzVector> ZLep, vector<double> ZLepErr,
+                              vector<TLorentzVector> ZGamma, vector<double> ZGammaErr) {
+
+      TLorentzVector lep1 = ZLep[0]; TLorentzVector lep2 = ZLep[1];
+
+      input.pTRECO1_lep = lep1.Pt(); input.pTRECO2_lep = lep2.Pt();
+      input.pTErr1_lep = ZLepErr[0]; input.pTErr2_lep = ZLepErr[1];
+      input.theta1_lep = lep1.Theta(); input.theta2_lep = lep2.Theta();
+      input.phi1_lep = lep1.Phi(); input.phi2_lep = lep2.Phi();
+      input.m1 = lep1.M(); input.m2 = lep2.M();
+
+      nFsr = 0;
+
+      if (int(ZGamma.size()) >= 1) {
+
+         nFsr = 1;
+         gamma1 = ZGamma[0];
+         input.pTRECO1_gamma = gamma1.Pt(); input.pTErr1_gamma = ZGammaErr[0];
+         input.theta1_gamma = gamma1.Theta(); input.phi1_gamma = gamma1.Phi();
+
+         }
+
+      if (int(ZGamma.size()) == 2) {
+
+         nFsr = 2;
+         gamma2 = ZGamma[1];
+         input.pTRECO2_gamma = gamma2.Pt(); input.pTErr2_gamma = ZGammaErr[1];
+         input.theta2_gamma = gamma2.Theta(); input.phi2_gamma = gamma2.Phi();
+
+         }
+
+}
+
+
+void KinZfitter::SetFitOutput(KinZfitter::FitInput input, KinZfitter::FitOutput output,
+                              double &l1, double &l2, double &lph1, double &lph2, 
+                              vector<double> &pTerrsREFIT_lep, vector<double> &pTerrsREFIT_gamma,
+                              TMatrixDSym crovMatrixZ) {
+
+     l1 = output.pT1_lep/input.pTRECO1_lep;
+     l2 = output.pT2_lep/input.pTRECO2_lep;
+     pTerrsREFIT_lep.push_back(output.pTErr1_lep);
+     pTerrsREFIT_lep.push_back(output.pTErr2_lep);
+
+     if (input.nFsr >= 1) {
+
+        lph1 = output.pT1_gamma/input.pTRECO1_gamma;
+        pTerrsREFIT_gamma.push_back(output.pTErr1_gamma);
+
+        }
+
+     if (input.nFsr == 2) {
+
+        lph2 = output.pT2_gamma/input.pTRECO2_gamma;
+        pTerrsREFIT_gamma.push_back(output.pTErr2_gamma);
+
+        }
+
+    int size = output.covMatrixZ.GetNcols();
+    covMatrixZ.ResizeTo(size,size);
+    covMatrixZ = output.covMatrixZ;
 
 }
 

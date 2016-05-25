@@ -141,6 +141,21 @@ private:
         HelperFunction * helperFunc_;
 
         void initZs(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhoton);
+     
+        void SetFitInput(FitInput input,
+                         vector<TLorentzVector> ZLep, vector<double> ZLepErr,
+                         vector<TLorentzVector> ZGamma, vector<double> ZGammaErr);
+
+        void SetFitOutput(FitInput input, FitOutput output,
+                          double &l1, double &l2, double &lph1, double &lph2,
+                          vector<double> &pTerrsREFIT_lep, vector<double> &pTerrsREFIT_gamma,
+                          TMatrixDSym crovMatrixZ);
+
+        void Driver(FitInput &input, FitOutput &output);
+
+        void MakeModel(RooWorkspace &w, FitInput &input);
+
+        void UseModel(RooWorkspace &w, FitOutput &output, int nFsr);
 
         /// lepton ids for Z1 Z2
         std::vector<int> idsZ1_, idsZ2_;
