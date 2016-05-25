@@ -545,7 +545,7 @@ void KinZfitter::KinRefitZ(TString fs, int option)//option: 0, Z1; 1, Z2; 2, bot
 
      }
 
-  if (option == 0 || option == 1) {
+  if (option == 1 || option == 2) {
 
      SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
      Driver(fitInput2, fitOutput2);
@@ -553,14 +553,6 @@ void KinZfitter::KinRefitZ(TString fs, int option)//option: 0, Z1; 1, Z2; 2, bot
 
      }
   
-SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
-
-  Driver(fitInput1, fitOutput1);
-  Driver(fitInput2, fitOutput2);
-
-  SetFitOutput(fitInput1, fitOutput1, l1, l2, lph1, lph2, pTerrsZ1REFIT_, pTerrsZ1phREFIT_, covMatrixZ1_);
-  SetFitOutput(fitInput2, fitOutput2, l3, l4, lph3, lph4, pTerrsZ2REFIT_, pTerrsZ2phREFIT_, covMatrixZ2_);
-
   if(debug_) cout<<"l1 "<<l1<<"; l2 "<<l2<<" lph1 "<<lph1<<" lph2 "<<lph2<<endl;
   if(debug_) cout<<"l3 "<<l3<<"; l4 "<<l4<<" lph3 "<<lph3<<" lph4 "<<lph4<<endl;
 
@@ -848,7 +840,7 @@ void  KinZfitter::RepairZ1Z2(vector<TLorentzVector> &Z1Lep, vector<double> &Z1Le
       lep3 = make_pair(Z1id[2], Z1Lep[2]);
       lep4 = make_pair(Z1id[3], Z1Lep[3]);
 
-      Z Z1_cfg1, Z2_cfg2, Z1_cfg2, Z2_cfg2;
+      Z Z1_cfg1, Z2_cfg1, Z1_cfg2, Z2_cfg2;
       Z1_cfg1 = make_pair(lep1, lep2); 
       Z2_cfg1 = make_pair(lep3, lep4);
       Z1_cfg2 = make_pair(lep1, (lep1.first + lep3.first == 0) ? lep3 : lep4);
