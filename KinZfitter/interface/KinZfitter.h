@@ -63,7 +63,7 @@ public:
         void Setup(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons);
 
         ///
-        void KinRefitZ();
+        void KinRefitZ(TString fs, int option);
 
         int  PerZ1Likelihood(double & l1, double & l2, double & lph1, double & lph2);
         void SetZResult(double l1, double l2, double lph1, double lph2,
@@ -157,6 +157,12 @@ private:
         void MakeModel(RooWorkspace &w, FitInput &input);
 
         void UseModel(RooWorkspace &w, FitOutput &output, int nFsr);
+
+        void RepairZ1Z2(vector<TLorentzVector> &Z1Lep, vector<double> &Z1LepErr,
+                        vector<TLorentzVector> &Z1Gamma, vector<double> &Z1GammaErr,
+                        vector<TLorentzVector> &Z2Lep, vector<double> &Z2LepErr,
+                        vector<TLorentzVector> &Z2Gamma, vector<double> &Z2GammaErr,
+                        vector<int> &Z1id, vector<int> &Z2id);
 
         /// lepton ids for Z1 Z2
         std::vector<int> idsZ1_, idsZ2_;

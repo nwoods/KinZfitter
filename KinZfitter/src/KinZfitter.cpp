@@ -19,7 +19,7 @@ KinZfitter::KinZfitter(bool isData)
 
      PDFName_ = "GluGluHToZZTo4L_M125_13TeV_powheg2_JHUgenV6_pythia8";
 
-     debug_ = true;
+     debug_ = false;
 
      if(debug_) std::cout << "KinZfitter. The debug flag is ON with "<<PDFName_<< std::endl;
 	
@@ -523,7 +523,7 @@ vector<TLorentzVector> KinZfitter::GetP4s()
 
 }
 
-void KinZfitter::KinRefitZ()
+void KinZfitter::KinRefitZ(TString fs, int option)//option: 0, Z1; 1, Z2; 2, both Zs
 {
   double l1,l2,lph1,lph2;
   double l3,l4,lph3,lph4;
@@ -531,8 +531,29 @@ void KinZfitter::KinRefitZ()
   l1 = 1.0; l2 = 1.0; lph1 = 1.0; lph2 = 1.0;
   l3 = 1.0; l4 = 1.0; lph3 = 1.0; lph4 = 1.0;
 
-  SetFitInput(fitInput1, p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_);
-  SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
+  if (fs == "4e" || fs == "4mu") {
+
+     RepairZ1Z2(p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_, idsZ1_, idsZ2_);
+
+     }
+
+  if (option == 0 || option == 2) {
+
+     SetFitInput(fitInput1, p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_);
+     Driver(fitInput1, fitOutput1);
+     SetFitOutput(fitInput1, fitOutput1, l1, l2, lph1, lph2, pTerrsZ1REFIT_, pTerrsZ1phREFIT_, covMatrixZ1_);
+
+     }
+
+  if (option == 0 || option == 1) {
+
+     SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
+     Driver(fitInput2, fitOutput2);
+     SetFitOutput(fitInput2, fitOutput2, l3, l4, lph3, lph4, pTerrsZ2REFIT_, pTerrsZ2phREFIT_, covMatrixZ2_);
+
+     }
+  
+SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
 
   Driver(fitInput1, fitOutput1);
   Driver(fitInput2, fitOutput2);
@@ -546,6 +567,7 @@ void KinZfitter::KinRefitZ()
   SetZResult(l1, l2, lph1, lph2, l3, l4, lph3, lph4);
 
   if(debug_) cout<<"Z refit done"<<endl;
+
 }
 
 void  KinZfitter::Driver(KinZfitter::FitInput &input, KinZfitter::FitOutput &output) {
@@ -628,7 +650,6 @@ void KinZfitter::SetFitOutput(KinZfitter::FitInput &input, KinZfitter::FitOutput
     int size = output.covMatrixZ.GetNcols();
     covMatrixZ.ResizeTo(size,size);
     covMatrixZ = output.covMatrixZ;
-std::cout << "matrix size: " << covMatrixZ.GetNcols() << std::endl;
 }
 
 
@@ -811,13 +832,71 @@ void KinZfitter::UseModel(RooWorkspace &w, KinZfitter::FitOutput &output, int nF
     delete pTs;
 }
 
+void  KinZfitter::RepairZ1Z2(vector<TLorentzVector> &Z1Lep, vector<double> &Z1LepErr,
+                             vector<TLorentzVector> &Z1Gamma, vector<double> &Z1GammaErr,
+                             vector<TLorentzVector> &Z2Lep, vector<double> &Z2LepErr,
+                             vector<TLorentzVector> &Z2Gamma, vector<double> &Z2GammaErr,
+                             vector<int> &Z1id, vector<int> &Z2id) {
+
+      typedef pair<int, TLorentzVector> Lep;
+      typedef pair<Lep, Lep> Z;
+      typedef pair<double, double> ZLepErr;
+
+      Lep lep1, lep2, lep3, lep4;
+      lep1 = make_pair(Z1id[0], Z1Lep[0]);
+      lep2 = make_pair(Z1id[1], Z1Lep[1]);
+      lep3 = make_pair(Z1id[2], Z1Lep[2]);
+      lep4 = make_pair(Z1id[3], Z1Lep[3]);
+
+      Z Z1_cfg1, Z2_cfg2, Z1_cfg2, Z2_cfg2;
+      Z1_cfg1 = make_pair(lep1, lep2); 
+      Z2_cfg1 = make_pair(lep3, lep4);
+      Z1_cfg2 = make_pair(lep1, (lep1.first + lep3.first == 0) ? lep3 : lep4);
+      Z2_cfg2 = make_pair(lep2, (lep2.first + lep4.first == 0) ? lep4 : lep3);
+
+      ZLepErr Z1LepErr_cfg1, Z2LepErr_cfg1, Z1LepErr_cfg2, Z2LepErr_cfg2;
+      Z1LepErr_cfg1 = make_pair(Z1LepErr[0], Z1LepErr[1]);
+      Z2LepErr_cfg1 = make_pair(Z2LepErr[0], Z2LepErr[1]);
+      Z1LepErr_cfg2 = make_pair(Z1LepErr[0], (lep1.first + lep3.first == 0) ? Z2LepErr[0] : Z2LepErr[1]);
+      Z2LepErr_cfg2 = make_pair(Z2LepErr[0], (lep2.first + lep4.first == 0) ? Z2LepErr[1] : Z2LepErr[0]);
+
+      double massZ1_cfg1 = (Z1_cfg1.first.second + Z1_cfg1.second.second).M();
+      double massZ2_cfg1 = (Z2_cfg1.first.second + Z2_cfg1.second.second).M();
+      double massZ1_cfg2 = (Z1_cfg2.first.second + Z1_cfg2.second.second).M();
+      double massZ2_cfg2 = (Z2_cfg2.first.second + Z2_cfg2.second.second).M();
+
+      double massZDiff_cfg1 = abs(massZ1_cfg1-massZ2_cfg1);
+      double massZDiff_cfg2 = abs(massZ1_cfg2-massZ2_cfg2);
+
+      if (massZDiff_cfg1 > massZDiff_cfg2) {
+
+         Z1id[0] = Z1_cfg2.first.first;
+         Z1Lep[0] = Z1_cfg2.first.second; 
+         Z1LepErr[0] = Z1LepErr_cfg2.first; 
+
+         Z1id[1] = Z1_cfg2.second.first;
+         Z1Lep[1] = Z1_cfg2.second.second; 
+         Z1LepErr[1] = Z1LepErr_cfg2.second;
+
+         Z2id[0] = Z2_cfg2.first.first;
+         Z2Lep[0] = Z2_cfg2.first.second; 
+         Z2LepErr[0] = Z2LepErr_cfg2.first;
+
+         Z2id[1] = Z2_cfg2.second.first;
+         Z2Lep[1] = Z2_cfg2.second.second;
+         Z2LepErr[1] = Z2LepErr_cfg2.second;
+
+         }
+}
+
+
 int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double & lph2)
 {
 
     l1= 1.0; l2 = 1.0;
     lph1 = 1.0; lph2 = 1.0;
 
-    if(debug_) cout<<"start Z1 refit"<<endl;
+    if(debug_) cout<<"start Z refit"<<endl;
 
     TLorentzVector Z1_1 = p4sZ1_[0]; TLorentzVector Z1_2 = p4sZ1_[1];
 
