@@ -143,14 +143,14 @@ private:
 
         void initZs(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhoton);
      
-        void SetFitInput(FitInput input,
+        void SetFitInput(FitInput &input,
                          vector<TLorentzVector> ZLep, vector<double> ZLepErr,
                          vector<TLorentzVector> ZGamma, vector<double> ZGammaErr);
 
-        void SetFitOutput(FitInput input, FitOutput output,
+        void SetFitOutput(FitInput &input, FitOutput &output,
                           double &l1, double &l2, double &lph1, double &lph2,
                           vector<double> &pTerrsREFIT_lep, vector<double> &pTerrsREFIT_gamma,
-                          TMatrixDSym crovMatrixZ);
+                          TMatrixDSym &crovMatrixZ);
 
         void Driver(FitInput &input, FitOutput &output);
 

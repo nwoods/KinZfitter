@@ -7,7 +7,7 @@
 /// KinFitter header
 #include "KinZfitter/KinZfitter/interface/KinZfitter.h"
 #include "KinZfitter/HelperFunction/interface/HelperFunction.h"
-
+#include "RooWorkspace.h"
 #include "FWCore/ParameterSet/interface/FileInPath.h"
 
 ///----------------------------------------------------------------------------------------------
@@ -529,7 +529,7 @@ void KinZfitter::KinRefitZ()
   double l3,l4,lph3,lph4;
 
   l1 = 1.0; l2 = 1.0; lph1 = 1.0; lph2 = 1.0;
-  l1 = 1.0; l2 = 1.0; lph1 = 1.0; lph2 = 1.0;
+  l3 = 1.0; l4 = 1.0; lph3 = 1.0; lph4 = 1.0;
 
   SetFitInput(fitInput1, p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_);
   SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
@@ -557,7 +557,7 @@ void  KinZfitter::Driver(KinZfitter::FitInput &input, KinZfitter::FitOutput &out
 }
 
 
-void  KinZfitter::SetFitInput(KinZfitter::FitInput input, 
+void  KinZfitter::SetFitInput(KinZfitter::FitInput &input, 
                               vector<TLorentzVector> ZLep, vector<double> ZLepErr,
                               vector<TLorentzVector> ZGamma, vector<double> ZGammaErr) {
 
@@ -570,6 +570,15 @@ void  KinZfitter::SetFitInput(KinZfitter::FitInput input,
       input.m1 = lep1.M(); input.m2 = lep2.M();
 
       input.nFsr = 0;
+      TLorentzVector nullFourVector(0, 0, 0, 0);
+      TLorentzVector Gamma1, Gamma2;
+      Gamma1 = nullFourVector; Gamma2 = nullFourVector;
+
+      input.pTRECO1_gamma = Gamma1.Pt(); input.pTErr1_gamma = 0;
+      input.theta1_gamma = Gamma1.Theta(); input.phi1_gamma = Gamma1.Phi();
+      input.pTRECO2_gamma = Gamma2.Pt(); input.pTErr2_gamma = 0;
+      input.theta2_gamma = Gamma2.Theta(); input.phi2_gamma = Gamma1.Phi();
+
 
       if (int(ZGamma.size()) >= 1) {
 
@@ -592,10 +601,10 @@ void  KinZfitter::SetFitInput(KinZfitter::FitInput input,
 }
 
 
-void KinZfitter::SetFitOutput(KinZfitter::FitInput input, KinZfitter::FitOutput output,
+void KinZfitter::SetFitOutput(KinZfitter::FitInput &input, KinZfitter::FitOutput &output,
                               double &l1, double &l2, double &lph1, double &lph2, 
                               vector<double> &pTerrsREFIT_lep, vector<double> &pTerrsREFIT_gamma,
-                              TMatrixDSym covMatrixZ) {
+                              TMatrixDSym &covMatrixZ) {
 
      l1 = output.pT1_lep/input.pTRECO1_lep;
      l2 = output.pT2_lep/input.pTRECO2_lep;
@@ -619,7 +628,7 @@ void KinZfitter::SetFitOutput(KinZfitter::FitInput input, KinZfitter::FitOutput 
     int size = output.covMatrixZ.GetNcols();
     covMatrixZ.ResizeTo(size,size);
     covMatrixZ = output.covMatrixZ;
-
+std::cout << "matrix size: " << covMatrixZ.GetNcols() << std::endl;
 }
 
 
@@ -646,7 +655,7 @@ void KinZfitter::MakeModel(RooWorkspace &w, KinZfitter::FitInput &input) {
      RooRealVar pTRECO2_gamma("pTRECO2_gamma", "pTRECO2_gamma", input.pTRECO2_gamma, 5, 500);
      RooRealVar pTMean1_gamma("pTMean1_gamma", "pTMean1_gamma", 
                               input.pTRECO1_gamma, max(0.5, input.pTRECO1_gamma-2*input.pTErr1_gamma), input.pTRECO1_gamma+2*input.pTErr1_gamma);
-     RooRealVar pTMean2_gamma("pTMean2_gamma", "pTMean2_gamma",
+     RooRealVar pTMean2_gamma("pTMean2_gamma", "pTMean2_gamma", 
                               input.pTRECO2_gamma, max(0.5, input.pTRECO2_gamma-2*input.pTErr2_gamma), input.pTRECO2_gamma+2*input.pTErr2_gamma);
      RooRealVar pTSigma1_gamma("pTSigma1_gamma", "pTSigma1_gamma", input.pTErr1_gamma);
      RooRealVar pTSigma2_gamma("pTSigma2_gamma", "pTSigma2_gamma", input.pTErr2_gamma);
@@ -673,35 +682,38 @@ void KinZfitter::MakeModel(RooWorkspace &w, KinZfitter::FitInput &input) {
      //gauss
      w.factory("Gaussian::gauss1_lep(pTRECO1_lep, pTMean1_lep, pTSigma1_lep)");
      w.factory("Gaussian::gauss2_lep(pTRECO2_lep, pTMean2_lep, pTSigma2_lep)");
-     w.factory("Gaussian::gauss1_gamma(pTRECO1_gamma, pTMean1_gamma, pTSigma1_gamma)");
-     w.factory("Gaussian::gauss2_gamma(pTRECO2_gamma, pTMean2_gamma, pTSigma2_gamma)");
+//     w.factory("Gaussian::gauss1_gamma(pTRECO1_gamma, pTMean1_gamma, pTSigma1_gamma)");
+//     w.factory("Gaussian::gauss2_gamma(pTRECO2_gamma, pTMean2_gamma, pTSigma2_gamma)");
 
      //E
-     TString makeE_lep = "'TMath::Sqrt((@0*@0)/((TMath::Sin(@1))*(TMath::Sin(@1)))+@2*@2'";
+     TString makeE_lep = "'TMath::Sqrt((@0*@0)/((TMath::Sin(@1))*(TMath::Sin(@1)))+@2*@2)'";
      w.factory("expr::E1_lep(" + makeE_lep + ", {pTMean1_lep, theta1_lep, m1})");
      w.factory("expr::E2_lep(" + makeE_lep + ", {pTMean2_lep, theta2_lep, m2})");
 
      TString makeE_gamma = "'TMath::Sqrt((@0*@0)/((TMath::Sin(@1))*(TMath::Sin(@1))))'";
-     w.factory("expr::E1_gamma(" + makeE_gamma + ", {pTMean1_gamma, theta1_gamma}");
-     w.factory("expr::E2_gamma(" + makeE_gamma + ", {pTMean2_gamma, theta2_gamma}");
+          
+//     w.factory("expr::E1_gamma(" + makeE_gamma + ", {pTMean1_gamma, theta1_gamma})");
+//     w.factory("expr::E2_gamma(" + makeE_gamma + ", {pTMean2_gamma, theta2_gamma})");
+     w.factory("expr::E1_gamma(" + makeE_gamma + ", {pTMean1_gamma, theta1_gamma})");
+     w.factory("expr::E2_gamma(" + makeE_gamma + ", {pTMean2_gamma, theta2_gamma})");
+
 
      //dotProduct 3d
      TString dotProduct_3d = "'@0*@1*( ((TMath::Cos(@2))*(TMath::Cos(@3)))/((TMath::Sin(@2))*(TMath::Sin(@3)))+(TMath::Cos(@4-@5)))'";
-     w.factory("expr::p1v3D2(" + dotProduct_3d + ", {pTMean1_lep, pTMean2_lep, theta1_lep, theta2_lep, phi1_lep, phi2_lep}");
-     w.factory("expr::p1v3Dph1(" + dotProduct_3d + ", {pTMean1_lep, pTMean1_gamma, theta1_lep, theta1_gamma, phi1_lep, phi1_gamma}");
-     w.factory("expr::p2v3Dph1(" + dotProduct_3d + ", {pTMean2_lep, pTMean1_gamma, theta2_lep, theta1_gamma, phi2_lep, phi1_gamma}");
-     w.factory("expr::p1v3Dph2(" + dotProduct_3d + ", {pTMean1_lep, pTMean2_gamma, theta1_lep, theta2_gamma, phi1_lep, phi2_gamma}");
-     w.factory("expr::p2v3Dph2(" + dotProduct_3d + ", {pTMean2_lep, pTMean2_gamma, theta2_lep, theta2_gamma, phi2_lep, phi2_gamma}");
-     w.factory("expr::ph1v3Dph2(" + dotProduct_3d + ", {pTMean1_gamma, pTMean2_gamma, theta1_gamma, theta2_gamma, phi1_gamma, phi2_gamma}");
-
+     w.factory("expr::p1v3D2(" + dotProduct_3d + ", {pTMean1_lep, pTMean2_lep, theta1_lep, theta2_lep, phi1_lep, phi2_lep})");
+     w.factory("expr::p1v3Dph1(" + dotProduct_3d + ", {pTMean1_lep, pTMean1_gamma, theta1_lep, theta1_gamma, phi1_lep, phi1_gamma})");
+     w.factory("expr::p2v3Dph1(" + dotProduct_3d + ", {pTMean2_lep, pTMean1_gamma, theta2_lep, theta1_gamma, phi2_lep, phi1_gamma})");
+     w.factory("expr::p1v3Dph2(" + dotProduct_3d + ", {pTMean1_lep, pTMean2_gamma, theta1_lep, theta2_gamma, phi1_lep, phi2_gamma})");
+     w.factory("expr::p2v3Dph2(" + dotProduct_3d + ", {pTMean2_lep, pTMean2_gamma, theta2_lep, theta2_gamma, phi2_lep, phi2_gamma})");
+     w.factory("expr::ph1v3Dph2(" + dotProduct_3d + ", {pTMean1_gamma, pTMean2_gamma, theta1_gamma, theta2_gamma, phi1_gamma, phi2_gamma})");
      //dotProduct 4d
      TString dotProduct_4d = "'@0*@1-@2'";
-     w.factory("expr::p1D2(" + dotProduct_4d + ", {E1_lep, E2_lep, p1v3D2}");
-     w.factory("expr::p1Dph1(" + dotProduct_4d + ", {E1_lep, E1_gamma, p1v3Dph1}");
-     w.factory("expr::p2Dph1(" + dotProduct_4d + ", {E2_lep, E1_gamma, p2v3Dph1}");
-     w.factory("expr::p1Dph2(" + dotProduct_4d + ", {E1_lep, E2_gamma, p1v3Dph2}");
-     w.factory("expr::p2Dph2(" + dotProduct_4d + ", {E2_lep, E2_gamma, p2v3Dph2}");
-     w.factory("expr::ph1Dph2(" + dotProduct_4d + ", {E1_gamma E2_gamma, ph1v3Dph2}");
+     w.factory("expr::p1D2(" + dotProduct_4d + ", {E1_lep, E2_lep, p1v3D2})");
+     w.factory("expr::p1Dph1(" + dotProduct_4d + ", {E1_lep, E1_gamma, p1v3Dph1})");
+     w.factory("expr::p2Dph1(" + dotProduct_4d + ", {E2_lep, E1_gamma, p2v3Dph1})");
+     w.factory("expr::p1Dph2(" + dotProduct_4d + ", {E1_lep, E2_gamma, p1v3Dph2})");
+     w.factory("expr::p2Dph2(" + dotProduct_4d + ", {E2_lep, E2_gamma, p2v3Dph2})");
+     w.factory("expr::ph1Dph2(" + dotProduct_4d + ", {E1_gamma E2_gamma, ph1v3Dph2})");
 
      //mZ
      if (input.nFsr == 0) {
@@ -716,6 +728,8 @@ void KinZfitter::MakeModel(RooWorkspace &w, KinZfitter::FitInput &input) {
 
         w.factory("expr:::mZ('TMath::Sqrt(2*@0+2*@1+2*@2+@3*@3+@4*@4)', {p1D2, p1Dph1, p2Dph1, m1, m2})");
         w.factory("EXPR::RelBW('1/( pow(mZ*mZ-bwMean*bwMean,2)+pow(mZ,4)*pow(bwGamma/bwMean,2) )', {mZ, bwMean[91.187], bwGamma[2.5]})");
+        w.factory("Gaussian::gauss1_gamma(pTRECO1_gamma, pTMean1_gamma, pTSigma1_gamma)");
+
         w.factory("PROD::PDFRelBW(gauss1_lep, gauss2_lep, gauss1_gamma, RelBW)");
 
         } 
@@ -724,14 +738,17 @@ void KinZfitter::MakeModel(RooWorkspace &w, KinZfitter::FitInput &input) {
 
         w.factory("expr::mZ('TMath::Sqrt(2*@0+2*@1+2*@2+2*@3+2*@4+2*@5+@6*@6+@7*@7', {p1D2,p1Dph1,p2Dph1,p1Dph2,p2Dph2,ph1Dph2, m1, m2})");
         w.factory("EXPR::RelBW('1/( pow(mZ*mZ-bwMean*bwMean,2)+pow(mZ,4)*pow(bwGamma/bwMean,2) )', {mZ, bwMean[91.187], bwGamma[2.5]})");
-        w.factory("PROD::PDFRelBW(gauss1_lep, gauss2_lep, gauss1_gamma, gauss2_gamma, RelBW)");
+     w.factory("Gaussian::gauss1_gamma(pTRECO1_gamma, pTMean1_gamma, pTSigma1_gamma)");
+     w.factory("Gaussian::gauss2_gamma(pTRECO2_gamma, pTMean2_gamma, pTSigma2_gamma)");
+ 
+       w.factory("PROD::PDFRelBW(gauss1_lep, gauss2_lep, gauss1_gamma, gauss2_gamma, RelBW)");
 
         }
-      
 }
 
 
 void KinZfitter::UseModel(RooWorkspace &w, KinZfitter::FitOutput &output, int nFsr) {
+
 
     //prepare dataset
     RooArgSet *rastmp;
