@@ -38,7 +38,7 @@
 #include "RooAddPdf.h"
 #include "RooGenericPdf.h"
 #include "RooFFTConvPdf.h"
-
+#include "RooWorkspace.h"
 #include "RooFitResult.h"
 
 // fit result covariance matrix
@@ -104,6 +104,27 @@ public:
         //RooFormulaVar p1DOTp2(RooRealVar pT1, RooRealVar theta1, RooRealVar phi1, RooRealVar m1, TString index1, RooRealVar pT2, RooRealVar theta2, RooRealVar phi2, RooRealVar m2, TString index2);
 
 private:
+
+        struct FitInput {
+
+               double pTRECO1_lep, pTRECO2_lep, pTErr1_lep, pTErr2_lep;
+               double theta1_lep, theta2_lep, phi1_lep, phi2_lep;
+               double m1, m2;
+
+               int nFsr;
+               double pTRECO1_gamma, pTRECO2_gamma, pTErr1_gamma, pTErr2_gamma;
+               double theta1_gamma, theta2_gamma, phi1_gamma, phi2_gamma;
+
+               } fitInput1, fitInput2;
+
+        struct FitOutput {
+
+               double pT1_lep, pT2_lep, pTErr1_lep, pTErr2_lep;
+               double pT1_gamma, pT2_gamma, pTErr1_gamma, pTErr2_gamma;
+          
+               TMatrixDSym covMatrixZ;       
+
+               } fitOutput1, fitOutput2;
 
         /// True mZ/mZ1 shape, final states
         TString PDFName_, fs_;      
