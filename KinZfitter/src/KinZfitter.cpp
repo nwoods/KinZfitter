@@ -19,7 +19,7 @@ KinZfitter::KinZfitter(bool isData)
 
      PDFName_ = "GluGluHToZZTo4L_M125_13TeV_powheg2_JHUgenV6_pythia8";
 
-     debug_ = false;
+     debug_ = true;
 
      if(debug_) std::cout << "KinZfitter. The debug flag is ON with "<<PDFName_<< std::endl;
 	
@@ -523,7 +523,7 @@ vector<TLorentzVector> KinZfitter::GetP4s()
 
 }
 
-void KinZfitter::KinRefitZ1()
+void KinZfitter::KinRefitZ()
 {
   double l1,l2,lph1,lph2;
   double l3,l4,lph3,lph4;
@@ -569,12 +569,12 @@ void  KinZfitter::SetFitInput(KinZfitter::FitInput input,
       input.phi1_lep = lep1.Phi(); input.phi2_lep = lep2.Phi();
       input.m1 = lep1.M(); input.m2 = lep2.M();
 
-      nFsr = 0;
+      input.nFsr = 0;
 
       if (int(ZGamma.size()) >= 1) {
 
-         nFsr = 1;
-         gamma1 = ZGamma[0];
+         input.nFsr = 1;
+         TLorentzVector gamma1 = ZGamma[0];
          input.pTRECO1_gamma = gamma1.Pt(); input.pTErr1_gamma = ZGammaErr[0];
          input.theta1_gamma = gamma1.Theta(); input.phi1_gamma = gamma1.Phi();
 
@@ -582,8 +582,8 @@ void  KinZfitter::SetFitInput(KinZfitter::FitInput input,
 
       if (int(ZGamma.size()) == 2) {
 
-         nFsr = 2;
-         gamma2 = ZGamma[1];
+         input.nFsr = 2;
+         TLorentzVector gamma2 = ZGamma[1];
          input.pTRECO2_gamma = gamma2.Pt(); input.pTErr2_gamma = ZGammaErr[1];
          input.theta2_gamma = gamma2.Theta(); input.phi2_gamma = gamma2.Phi();
 
@@ -595,7 +595,7 @@ void  KinZfitter::SetFitInput(KinZfitter::FitInput input,
 void KinZfitter::SetFitOutput(KinZfitter::FitInput input, KinZfitter::FitOutput output,
                               double &l1, double &l2, double &lph1, double &lph2, 
                               vector<double> &pTerrsREFIT_lep, vector<double> &pTerrsREFIT_gamma,
-                              TMatrixDSym crovMatrixZ) {
+                              TMatrixDSym covMatrixZ) {
 
      l1 = output.pT1_lep/input.pTRECO1_lep;
      l2 = output.pT2_lep/input.pTRECO2_lep;
@@ -629,9 +629,9 @@ void KinZfitter::MakeModel(RooWorkspace &w, KinZfitter::FitInput &input) {
      RooRealVar pTRECO1_lep("pTRECO1_lep", "pTRECO1_lep", input.pTRECO1_lep, 5, 500);
      RooRealVar pTRECO2_lep("pTRECO2_lep", "pTRECO2_lep", input.pTRECO2_lep, 5, 500);
      RooRealVar pTMean1_lep("pTMean1_lep", "pTMean1_lep", 
-                            input.pTRECO1_lep, max(5, input.pTRECO1_lep-2*input.pTErr1_lep), input.pTRECO1_lep+2*input.pTErr1_lep);
+                            input.pTRECO1_lep, max(5.0, input.pTRECO1_lep-2*input.pTErr1_lep), input.pTRECO1_lep+2*input.pTErr1_lep);
      RooRealVar pTMean2_lep("pTMean2_lep", "pTMean2_lep", 
-                            input.pTRECO2_lep, max(5, input.pTRECO2_lep-2*input.pTErr2_lep), input.pTRECO2_lep+2*input.pTErr2_lep);
+                            input.pTRECO2_lep, max(5.0, input.pTRECO2_lep-2*input.pTErr2_lep), input.pTRECO2_lep+2*input.pTErr2_lep);
      RooRealVar pTSigma1_lep("pTSigma1_lep", "pTSigma1_lep", input.pTErr1_lep);
      RooRealVar pTSigma2_lep("pTSigma2_lep", "pTSigma2_lep", input.pTErr2_lep);
      RooRealVar theta1_lep("theta1_lep", "theta1_lep", input.theta1_lep);
@@ -736,17 +736,17 @@ void KinZfitter::UseModel(RooWorkspace &w, KinZfitter::FitOutput &output, int nF
     //prepare dataset
     RooArgSet *rastmp;
 
-    rastmp = new RooArgSet(w.var("pTRECO1_lep"), w.var("pTRECO2_lep"));
+    rastmp = new RooArgSet(*(w.var("pTRECO1_lep")), *(w.var("pTRECO2_lep")));
 
     if(nFsr == 1) {
 
-      rastmp = new RooArgSet(w.var("pTRECO1_lep"), w.var("pTRECO2_lep"), w.var("pTRECO1_gamma"));
+      rastmp = new RooArgSet(*(w.var("pTRECO1_lep")), *(w.var("pTRECO2_lep")), *(w.var("pTRECO1_gamma")));
 
       }
 
     if(nFsr == 2) {
 
-      rastmp = new RooArgSet(w.var("pTRECO1_lep"), w.var("pTRECO2_lep"), w.var("pTRECO1_gamma"), w.var("pTRECO2_gamma"));
+      rastmp = new RooArgSet(*(w.var("pTRECO1_lep")), *(w.var("pTRECO2_lep")), *(w.var("pTRECO1_gamma")), *(w.var("pTRECO2_gamma")));
 
       }
 
@@ -768,29 +768,30 @@ void KinZfitter::UseModel(RooWorkspace &w, KinZfitter::FitOutput &output, int nF
     }
 
     int size = covMatrix.GetNcols();
-    output.covMatrixZ_.ResizeTo(size,size);
+    output.covMatrixZ.ResizeTo(size,size);
     output.covMatrixZ = covMatrix;
     
-    output.pT1_lep = w.var("pTMean1_lep").getVal();
-    output.pT2_lep = w.var("pTMean2_lep").getVal();
-    output.pTErr1_lep = w.var("pTMean1_lep").getError();
-    output.pTErr2_lep = w.var("pTMean2_lep").getError();
+    output.pT1_lep = w.var("pTMean1_lep")->getVal();
+    output.pT2_lep = w.var("pTMean2_lep")->getVal();
+    output.pTErr1_lep = w.var("pTMean1_lep")->getError();
+    output.pTErr2_lep = w.var("pTMean2_lep")->getError();
 
     if (nFsr >= 1) {
 
-       output.pT1_gamma = w.var("pTMean1_gamma").getVal();
-       output.pTErr1_gamma = w.var("pTMean1_gamma").getError();
+       output.pT1_gamma = w.var("pTMean1_gamma")->getVal();
+       output.pTErr1_gamma = w.var("pTMean1_gamma")->getError();
     
        }
 
     if (nFsr == 2) {
 
-       output.pT2_gamma = w.var("pTMean2_gamma").getVal();
-       output.pTErr2_gamma = w.var("pTMean2_gamma").getError();
+       output.pT2_gamma = w.var("pTMean2_gamma")->getVal();
+       output.pTErr2_gamma = w.var("pTMean2_gamma")->getError();
 
        }
 
-    delete rastmp, pTs;
+    delete rastmp;
+    delete pTs;
 }
 
 int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double & lph2)

@@ -63,10 +63,11 @@ public:
         void Setup(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons);
 
         ///
-        void KinRefitZ1();
+        void KinRefitZ();
 
         int  PerZ1Likelihood(double & l1, double & l2, double & lph1, double & lph2);
-        void SetZ1Result(double l1, double l2, double lph1, double lph2);
+        void SetZResult(double l1, double l2, double lph1, double lph2,
+                        double l3, double l4, double lph3, double lph4);
 
         // result wrappers
         double GetRefitM4l();
