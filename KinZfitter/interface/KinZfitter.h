@@ -73,6 +73,7 @@ public:
         double GetRefitM4l();
         double GetM4l();
         double GetRefitMZ1();
+        double GetRefitMZ2();
 
         double GetMZ1Err();
         double GetRefitM4lErr();
@@ -154,9 +155,9 @@ private:
 
         void Driver(FitInput &input, FitOutput &output);
 
-        void MakeModel(RooWorkspace &w, FitInput &input);
+        void MakeModel(FitInput &input, FitOutput &output);
 
-        void UseModel(RooWorkspace &w, FitOutput &output, int nFsr);
+//        void UseModel(RooWorkspace &w, FitOutput &output, int nFsr);
 
         void RepairZ1Z2(vector<TLorentzVector> &Z1Lep, vector<double> &Z1LepErr,
                         vector<TLorentzVector> &Z1Gamma, vector<double> &Z1GammaErr,
