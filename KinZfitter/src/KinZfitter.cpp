@@ -595,11 +595,11 @@ void KinZfitter::KinRefitZ()
 
   bool fourEfourMu = IsFourEFourMu(idsZ1_, idsZ2_);
 
-  double mass4lRECO = GetM4l();
+  mass4lRECO_ = GetM4l();
 
 //cout << mass4lRECO << endl;
 
-  if (mass4lRECO <= cutoff_) {//fit Z1
+  if (mass4lRECO_ <= cutoff_) {//fit Z1
 
      SetFitInput(fitInput1, p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_);
      Driver(fitInput1, fitOutput1);
@@ -804,6 +804,28 @@ void KinZfitter::MakeModel(/*RooWorkspace &w,*/ KinZfitter::FitInput &input, Kin
      RelBW = new RooGenericPdf("RelBW","1/( pow(mZ*mZ-bwMean*bwMean,2)+pow(mZ,4)*pow(bwGamma/bwMean,2) )", RooArgSet(*mZ,bwMean,bwGamma) );
      PDFRelBW = new RooProdPdf("PDFRelBW", "PDFRelBW", RooArgList(gauss1_lep, gauss2_lep, *RelBW));     
 
+     //true shape
+     RooRealVar sg("sg", "sg", sgVal_);
+     RooRealVar a("a", "a", aVal_);
+     RooRealVar n("n", "n", nVal_);
+
+     RooCBShape CB("CB","CB",*mZ,bwMean,sg,a,n);
+     RooRealVar f("f","f", fVal_);
+
+     RooRealVar mean("mean","mean",meanVal_);
+     RooRealVar sigma("sigma","sigma",sigmaVal_);
+     RooRealVar f1("f1","f1",f1Val_);
+
+     RooAddPdf *RelBWxCB;
+     RelBWxCB = new RooAddPdf("RelBWxCB","RelBWxCB", *RelBW, CB, f);
+     RooGaussian *gauss;
+     gauss = new RooGaussian("gauss","gauss",*mZ,mean,sigma);
+     RooAddPdf *RelBWxCBxgauss;
+     RelBWxCBxgauss = new RooAddPdf("RelBWxCBxgauss","RelBWxCBxgauss", *RelBWxCB, *gauss, f1);
+
+     RooProdPdf *PDFRelBWxCBxgauss;
+     PDFRelBWxCBxgauss = new RooProdPdf("PDFRelBWxCBxgauss","PDFRelBWxCBxgauss", 
+                                     RooArgList(gauss1_lep, gauss2_lep, *RelBWxCBxgauss) );
 /*
      if (input.nFsr == 1) {
 
@@ -837,7 +859,16 @@ void KinZfitter::MakeModel(/*RooWorkspace &w,*/ KinZfitter::FitInput &input, Kin
     RooDataSet* pTs = new RooDataSet("pTs","pTs", *rastmp);
     pTs->add(*rastmp);
 
-    RooFitResult* r = PDFRelBW->fitTo(*pTs,RooFit::Save(),RooFit::PrintLevel(-1));
+    RooFitResult* r;
+    if (mass4lRECO_ > 140) {
+
+       r = PDFRelBW->fitTo(*pTs,RooFit::Save(),RooFit::PrintLevel(-1));
+
+       } else {
+
+              r = PDFRelBWxCBxgauss->fitTo(*pTs,RooFit::Save(),RooFit::PrintLevel(-1));
+
+              }
     //save fit result
     const TMatrixDSym& covMatrix = r->covarianceMatrix();
     const RooArgList& finalPars = r->floatParsFinal();
@@ -877,7 +908,10 @@ void KinZfitter::MakeModel(/*RooWorkspace &w,*/ KinZfitter::FitInput &input, Kin
     delete PDFRelBW;
     delete mZ;
     delete RelBW;
-
+    delete RelBWxCB;
+    delete gauss;
+    delete RelBWxCBxgauss;
+    delete PDFRelBWxCBxgauss;
 }
 
 bool KinZfitter::IsFourEFourMu(vector<int> &Z1id, vector<int> &Z2id) {

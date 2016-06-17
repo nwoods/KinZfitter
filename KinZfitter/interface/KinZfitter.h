@@ -110,6 +110,7 @@ public:
 private:
 
         double cutoff_ = 182.3752;
+        double mass4lRECO_ = -1;
 
         struct FitInput {
 
