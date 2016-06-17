@@ -63,7 +63,7 @@ public:
         void Setup(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons);
 
         ///
-        void KinRefitZ(TString fs, int option);
+        void KinRefitZ();
 
         int  PerZ1Likelihood(double & l1, double & l2, double & lph1, double & lph2);
         void SetZResult(double l1, double l2, double lph1, double lph2,
@@ -74,6 +74,8 @@ public:
         double GetM4l();
         double GetRefitMZ1();
         double GetRefitMZ2();
+        double GetMZ1();
+        double GetMZ2();
 
         double GetMZ1Err();
         double GetRefitM4lErr();
@@ -106,6 +108,8 @@ public:
         //RooFormulaVar p1DOTp2(RooRealVar pT1, RooRealVar theta1, RooRealVar phi1, RooRealVar m1, TString index1, RooRealVar pT2, RooRealVar theta2, RooRealVar phi2, RooRealVar m2, TString index2);
 
 private:
+
+        double cutoff_ = 182.3752;
 
         struct FitInput {
 
@@ -165,6 +169,7 @@ private:
                         vector<TLorentzVector> &Z2Gamma, vector<double> &Z2GammaErr,
                         vector<int> &Z1id, vector<int> &Z2id);
 
+        bool IsFourEFourMu(vector<int> &Z1id, vector<int> &Z2id);
         /// lepton ids for Z1 Z2
         std::vector<int> idsZ1_, idsZ2_;
         /// lepton ids that fsr photon associated to
