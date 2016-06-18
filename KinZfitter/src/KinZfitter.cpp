@@ -7,9 +7,12 @@
 /// KinFitter header
 #include "KinZfitter/KinZfitter/interface/KinZfitter.h"
 #include "KinZfitter/HelperFunction/interface/HelperFunction.h"
-
+#include "DataFormats/Math/interface/deltaR.h"
+#include "RooWorkspace.h"
+#include "RooProduct.h"
+#include "RooProdPdf.h"
 #include "FWCore/ParameterSet/interface/FileInPath.h"
-
+#include "time.h"
 ///----------------------------------------------------------------------------------------------
 /// KinZfitter::KinZfitter - constructor/
 ///----------------------------------------------------------------------------------------------
@@ -147,7 +150,6 @@ void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, std::ma
                 pTerrsZ1ph_.push_back(pTerr);
                 p4sZ1ph_.push_back(p4);
                 idsFsrZ1_.push_back(idsZ1_[ifsr]);
-
               }
             else{
 
@@ -165,15 +167,22 @@ void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, std::ma
   
 }
 
-void KinZfitter::SetZ1Result(double l1, double l2, double lph1, double lph2)
+void KinZfitter::SetZResult(double l1, double l2, double lph1, double lph2, 
+                            double l3, double l4, double lph3, double lph4)
 {
 
-  if(debug_) cout<<"start set Z1 result"<<endl;
+  if(debug_) cout<<"start set Z result"<<endl;
 
   // pT scale after refitting w.r.t. reco pT
+
   lZ1_l1_ = l1; lZ1_l2_ = l2;
+  lZ2_l1_ = l3; lZ2_l2_ = l4;
+
   if(debug_) cout<<"l1 "<<l1<<" l2 "<<l2<<endl;
+  if(debug_) cout<<"l3 "<<l3<<" l4 "<<l4<<endl;
+
   lZ1_ph1_ = lph1; lZ1_ph2_ = lph2;
+  lZ2_ph1_ = lph1; lZ2_ph2_ = lph2;
 
   TLorentzVector Z1_1 = p4sZ1_[0]; TLorentzVector Z1_2 = p4sZ1_[1];
   TLorentzVector Z2_1 = p4sZ2_[0]; TLorentzVector Z2_2 = p4sZ2_[1];
@@ -183,9 +192,15 @@ void KinZfitter::SetZ1Result(double l1, double l2, double lph1, double lph2)
   TLorentzVector Z1_2_True(0,0,0,0);
   Z1_2_True.SetPtEtaPhiM(lZ1_l2_*Z1_2.Pt(),Z1_2.Eta(),Z1_2.Phi(),Z1_2.M());
 
-  p4sZ1REFIT_.push_back(Z1_1_True); p4sZ1REFIT_.push_back(Z1_2_True);
+  TLorentzVector Z2_1_True(0,0,0,0);
+  Z2_1_True.SetPtEtaPhiM(lZ2_l1_*Z2_1.Pt(),Z2_1.Eta(),Z2_1.Phi(),Z2_1.M());
+  TLorentzVector Z2_2_True(0,0,0,0);
+  Z2_2_True.SetPtEtaPhiM(lZ2_l2_*Z2_2.Pt(),Z2_2.Eta(),Z2_2.Phi(),Z2_2.M());
 
-  for(unsigned int ifsr1 = 0; ifsr1<p4sZ1ph_.size(); ifsr1++){
+  p4sZ1REFIT_.push_back(Z1_1_True); p4sZ1REFIT_.push_back(Z1_2_True);
+  p4sZ2REFIT_.push_back(Z2_1_True); p4sZ2REFIT_.push_back(Z2_2_True);
+
+  for(unsigned int ifsr1 = 0; ifsr1 < p4sZ1ph_.size(); ifsr1++){
 
       TLorentzVector Z1ph = p4sZ1ph_[ifsr1];
       TLorentzVector Z1phTrue(0,0,0,0);
@@ -200,19 +215,40 @@ void KinZfitter::SetZ1Result(double l1, double l2, double lph1, double lph2)
   }
 
   // since it is Z1 refit result, Z2 kinematics keep at what it is 
-  p4sZ2REFIT_.push_back(p4sZ2_[0]); p4sZ2REFIT_.push_back(p4sZ2_[1]);
-  pTerrsZ2REFIT_.push_back(pTerrsZ2_[0]); pTerrsZ2REFIT_.push_back(pTerrsZ2_[1]);
+//  p4sZ2REFIT_.push_back(p4sZ2_[0]); p4sZ2REFIT_.push_back(p4sZ2_[1]);
+//  pTerrsZ2REFIT_.push_back(pTerrsZ2_[0]); pTerrsZ2REFIT_.push_back(pTerrsZ2_[1]);
 
-  for(unsigned int iz2 = 0; iz2 < p4sZ2ph_.size(); iz2++){
+  for(unsigned int ifsr2 = 0; ifsr2 < p4sZ2ph_.size(); ifsr2++){
 
-     p4sZ2phREFIT_.push_back(p4sZ2ph_[iz2]);
-     pTerrsZ2phREFIT_.push_back(pTerrsZ2ph_[iz2]);
+      TLorentzVector Z2ph = p4sZ2ph_[ifsr2];
+      TLorentzVector Z2phTrue(0,0,0,0);
+
+      double l = 1.0;
+      if(ifsr2==0) l = lZ2_ph1_; if(ifsr2==1) l = lZ2_ph2_;
+
+      Z2phTrue.SetPtEtaPhiM(l*Z2ph.Pt(),Z2ph.Eta(),Z2ph.Phi(),Z2ph.M());
+
+      p4sZ2phREFIT_.push_back(Z2phTrue);
 
   }
 
   if(debug_) cout<<"end set Z1 result"<<endl;
+}
+
+double KinZfitter::GetM4l()
+{
+
+  vector<TLorentzVector> p4s = GetP4s();
+
+  TLorentzVector pH(0,0,0,0);
+  for(unsigned int i = 0; i< p4s.size(); i++){
+     pH = pH + p4s[i];
+  }
+
+  return pH.M();
 
 }
+
 
 double KinZfitter::GetRefitM4l()
 {
@@ -240,6 +276,44 @@ double KinZfitter::GetRefitMZ1()
   return pZ1.M();
 
 }
+double KinZfitter::GetRefitMZ2()
+{
+
+  vector<TLorentzVector> p4s = GetRefitP4s();
+
+  TLorentzVector pZ2(0,0,0,0);
+
+  pZ2 = p4s[2] + p4s[3];
+
+  return pZ2.M();
+
+}
+
+double KinZfitter::GetMZ1()
+{
+
+  vector<TLorentzVector> p4s = GetP4s();
+
+  TLorentzVector pZ1(0,0,0,0);
+
+  pZ1 = p4s[0] + p4s[1];
+
+  return pZ1.M();
+
+}
+double KinZfitter::GetMZ2()
+{
+
+  vector<TLorentzVector> p4s = GetP4s();
+
+  TLorentzVector pZ2(0,0,0,0);
+
+  pZ2 = p4s[2] + p4s[3];
+
+  return pZ2.M();
+
+}
+
 
 double KinZfitter::GetRefitM4lErr()
 {
@@ -285,29 +359,35 @@ double KinZfitter::GetRefitM4lErrFullCov()
 
   p4s.push_back(p4sZ1REFIT_[0]);p4s.push_back(p4sZ1REFIT_[1]);
   pTErrs.push_back(pTerrsZ1REFIT_[0]); pTErrs.push_back(pTerrsZ1REFIT_[1]);
-
   // patch when MINUIT FAILS
-  if(pTerrsZ1REFIT_[0]==0||pTerrsZ1REFIT_[1]==0)
+/*  if(pTerrsZ1REFIT_[0]==0||pTerrsZ1REFIT_[1]==0)
 
    return GetM4lErr();
+*/
 
-  if(p4sZ1phREFIT_.size()>=1){
+/*  if(p4sZ1phREFIT_.size()>=1){
    p4s.push_back(p4sZ1phREFIT_[0]); pTErrs.push_back(pTerrsZ1phREFIT_[0]);
   } 
+
   if(p4sZ1phREFIT_.size()==2){
    p4s.push_back(p4sZ1phREFIT_[1]); pTErrs.push_back(pTerrsZ1phREFIT_[1]);
   }
-
+*/
   p4s.push_back(p4sZ2REFIT_[0]);p4s.push_back(p4sZ2REFIT_[1]);
   pTErrs.push_back(pTerrsZ2REFIT_[0]); pTErrs.push_back(pTerrsZ2REFIT_[1]);
-
+/*
   if(p4sZ2phREFIT_.size()>=1){
    p4s.push_back(p4sZ2phREFIT_[0]); pTErrs.push_back(pTerrsZ2phREFIT_[0]);
   }
+
   if(p4sZ2phREFIT_.size()==2){
    p4s.push_back(p4sZ2phREFIT_[1]); pTErrs.push_back(pTerrsZ2phREFIT_[1]);
   }
+*/
+/*  if(pTerrsZ2REFIT_[0]==0||pTerrsZ2REFIT_[1]==0)
 
+   return GetM4lErr();
+*/
   double errorUncorr = helperFunc_->masserror(p4s,pTErrs);
 
   vector<double> pTErrs1; vector<double> pTErrs2;
@@ -323,7 +403,9 @@ double KinZfitter::GetRefitM4lErrFullCov()
   double error1 = helperFunc_->masserror(p4s,pTErrs1);
   double error2 = helperFunc_->masserror(p4s,pTErrs2);
 
-  double errorph1 = 0.0; double errorph2 = 0.0; 
+
+/*
+ double errorph1 = 0.0; double errorph2 = 0.0; 
   if(p4sZ2phREFIT_.size()>=1){ 
  
    vector<double> pTErrsph1;
@@ -347,18 +429,18 @@ double KinZfitter::GetRefitM4lErrFullCov()
    errorph2 = helperFunc_->masserror(p4s,pTErrsph2);  
 
   }
-
+*/
   if(debug_) cout<<"error1 "<<error1<<" error2 "<<error2<<endl;
 
   ////
   // covariance matrix
-
   double delta12 = error1*error2*covMatrixZ1_(0,1)/sqrt(covMatrixZ1_(0,0)*covMatrixZ1_(1,1));
-  double delta1ph1 = 0.0; double delta1ph2 = 0.0;
+
+/*  double delta1ph1 = 0.0; double delta1ph2 = 0.0;
   double delta2ph1 = 0.0; double delta2ph2 = 0.0;
   double deltaph1ph2 = 0.0;
-
   if(p4sZ1phREFIT_.size()>=1){
+
      delta1ph1 = error1*errorph1*covMatrixZ1_(0,2)/sqrt(covMatrixZ1_(0,0)*covMatrixZ1_(2,2));
      delta2ph1 = error2*errorph1*covMatrixZ1_(1,2)/sqrt(covMatrixZ1_(1,1)*covMatrixZ1_(2,2));
   }
@@ -368,9 +450,9 @@ double KinZfitter::GetRefitM4lErrFullCov()
      delta2ph2 = error2*errorph2*covMatrixZ1_(1,3)/sqrt(covMatrixZ1_(1,1)*covMatrixZ1_(3,3));
      delta1ph2 = errorph1*errorph2*covMatrixZ1_(2,3)/sqrt(covMatrixZ1_(2,2)*covMatrixZ1_(3,3));
   }
+*/
 
-
-  double correlation = delta12+delta1ph1+delta1ph2+delta2ph1+delta2ph2+deltaph1ph2;
+  double correlation = delta12;//+delta1ph1+delta1ph2+delta2ph1+delta2ph2+deltaph1ph2;
 
   double err = sqrt(errorUncorr*errorUncorr+correlation);
 
@@ -503,22 +585,431 @@ vector<TLorentzVector> KinZfitter::GetP4s()
 
 }
 
-void KinZfitter::KinRefitZ1()
+void KinZfitter::KinRefitZ()
 {
   double l1,l2,lph1,lph2;
-  l1 = 1.0; l2 = 1.0; lph1 = 1.0; lph2 = 1.0; 
+  double l3,l4,lph3,lph4;
 
-  PerZ1Likelihood(l1,l2,lph1,lph2);
+  l1 = 1.0; l2 = 1.0; lph1 = 1.0; lph2 = 1.0;
+  l3 = 1.0; l4 = 1.0; lph3 = 1.0; lph4 = 1.0;
+
+  bool fourEfourMu = IsFourEFourMu(idsZ1_, idsZ2_);
+
+  mass4lRECO_ = GetM4l();
+
+//cout << mass4lRECO << endl;
+
+  if (mass4lRECO_ <= cutoff_) {//fit Z1
+
+     SetFitInput(fitInput1, p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_);
+     Driver(fitInput1, fitOutput1);
+     SetFitOutput(fitInput1, fitOutput1, l1, l2, lph1, lph2, pTerrsZ1REFIT_, pTerrsZ1phREFIT_, covMatrixZ1_);
+
+     pTerrsZ2REFIT_.push_back(pTerrsZ2_[0]); pTerrsZ2REFIT_.push_back(pTerrsZ2_[1]);
+
+     } else {//fit two Zs
+
+            if (fourEfourMu) {//4e,4mu, do reshuffle
+
+               RepairZ1Z2(p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_, idsZ1_, idsZ2_);
+
+               }
+       
+            SetFitInput(fitInput1, p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_);
+            Driver(fitInput1, fitOutput1);
+            SetFitOutput(fitInput1, fitOutput1, l1, l2, lph1, lph2, pTerrsZ1REFIT_, pTerrsZ1phREFIT_, covMatrixZ1_);
+
+            SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
+            Driver(fitInput2, fitOutput2);
+            SetFitOutput(fitInput2, fitOutput2, l3, l4, lph3, lph4, pTerrsZ2REFIT_, pTerrsZ2phREFIT_, covMatrixZ2_);
+
+            }
+
   if(debug_) cout<<"l1 "<<l1<<"; l2 "<<l2<<" lph1 "<<lph1<<" lph2 "<<lph2<<endl;
-  SetZ1Result(l1,l2,lph1,lph2);
-  if(debug_) cout<<"Z1 refit done"<<endl;
+  if(debug_) cout<<"l3 "<<l3<<"; l4 "<<l4<<" lph3 "<<lph3<<" lph4 "<<lph4<<endl;
+
+  SetZResult(l1, l2, lph1, lph2, l3, l4, lph3, lph4);
+
+  if(debug_) cout<<"Z refit done"<<endl;
+}
+
+void  KinZfitter::Driver(KinZfitter::FitInput &input, KinZfitter::FitOutput &output) {
+
+      MakeModel(input, output);
+
 }
 
 
+void  KinZfitter::SetFitInput(KinZfitter::FitInput &input, 
+                              vector<TLorentzVector> ZLep, vector<double> ZLepErr,
+                              vector<TLorentzVector> ZGamma, vector<double> ZGammaErr) {
+
+      TLorentzVector lep1 = ZLep[0]; TLorentzVector lep2 = ZLep[1];
+
+      input.pTRECO1_lep = lep1.Pt(); input.pTRECO2_lep = lep2.Pt();
+      input.pTErr1_lep = ZLepErr[0]; input.pTErr2_lep = ZLepErr[1];
+      input.theta1_lep = lep1.Theta(); input.theta2_lep = lep2.Theta();
+      input.phi1_lep = lep1.Phi(); input.phi2_lep = lep2.Phi();
+      input.m1 = lep1.M(); input.m2 = lep2.M();
+
+      input.nFsr = 0;
+      TLorentzVector nullFourVector(0, 0, 0, 0);
+      TLorentzVector Gamma1, Gamma2;
+      Gamma1 = nullFourVector; Gamma2 = nullFourVector;
+
+      input.pTRECO1_gamma = Gamma1.Pt(); input.pTErr1_gamma = 0;
+      input.theta1_gamma = Gamma1.Theta(); input.phi1_gamma = Gamma1.Phi();
+      input.pTRECO2_gamma = Gamma2.Pt(); input.pTErr2_gamma = 0;
+      input.theta2_gamma = Gamma2.Theta(); input.phi2_gamma = Gamma1.Phi();
+
+
+      if (int(ZGamma.size()) >= 1) {
+
+         input.nFsr = 1;
+         TLorentzVector gamma1 = ZGamma[0];
+         input.pTRECO1_gamma = gamma1.Pt(); input.pTErr1_gamma = ZGammaErr[0];
+         input.theta1_gamma = gamma1.Theta(); input.phi1_gamma = gamma1.Phi();
+
+         }
+
+      if (int(ZGamma.size()) == 2) {
+
+         input.nFsr = 2;
+         TLorentzVector gamma2 = ZGamma[1];
+         input.pTRECO2_gamma = gamma2.Pt(); input.pTErr2_gamma = ZGammaErr[1];
+         input.theta2_gamma = gamma2.Theta(); input.phi2_gamma = gamma2.Phi();
+
+         }
+
+//      /*if (debug_)*/ cout << "nFsr: " << input.nFsr << endl;
+}
+
+
+void KinZfitter::SetFitOutput(KinZfitter::FitInput &input, KinZfitter::FitOutput &output,
+                              double &l1, double &l2, double &lph1, double &lph2, 
+                              vector<double> &pTerrsREFIT_lep, vector<double> &pTerrsREFIT_gamma,
+                              TMatrixDSym &covMatrixZ) {
+
+     l1 = output.pT1_lep/input.pTRECO1_lep;
+     l2 = output.pT2_lep/input.pTRECO2_lep;
+     pTerrsREFIT_lep.push_back(output.pTErr1_lep);
+     pTerrsREFIT_lep.push_back(output.pTErr2_lep);
+
+     if (debug_) {
+
+        cout << "lep1 pt before: " << input.pTRECO1_lep << ", lep1 pt after: " << output.pT1_lep << endl;
+        cout << "lep2 pt before: " << input.pTRECO2_lep << ", lep2 pt after: " << output.pT2_lep << endl;
+
+        }
+
+     if (input.nFsr >= 1) {
+
+//        lph1 = output.pT1_gamma/input.pTRECO1_gamma;
+//        pTerrsREFIT_gamma.push_back(output.pTErr1_gamma);
+        lph1 = 1;
+        pTerrsREFIT_gamma.push_back(input.pTErr1_gamma);
+
+        }
+
+     if (input.nFsr == 2) {
+
+//        lph2 = output.pT2_gamma/input.pTRECO2_gamma;
+//        pTerrsREFIT_gamma.push_back(output.pTErr2_gamma);
+        lph2 = 1;
+        pTerrsREFIT_gamma.push_back(input.pTErr2_gamma);
+
+        }
+
+    int size = output.covMatrixZ.GetNcols();
+    covMatrixZ.ResizeTo(size,size);
+    covMatrixZ = output.covMatrixZ;
+
+}
+
+
+void KinZfitter::MakeModel(/*RooWorkspace &w,*/ KinZfitter::FitInput &input, KinZfitter::FitOutput &output) {
+
+     //lep
+     RooRealVar pTRECO1_lep("pTRECO1_lep", "pTRECO1_lep", input.pTRECO1_lep, 5, 500);
+     RooRealVar pTRECO2_lep("pTRECO2_lep", "pTRECO2_lep", input.pTRECO2_lep, 5, 500);
+     RooRealVar pTMean1_lep("pTMean1_lep", "pTMean1_lep", 
+                            input.pTRECO1_lep, max(5.0, input.pTRECO1_lep-2*input.pTErr1_lep), input.pTRECO1_lep+2*input.pTErr1_lep);
+     RooRealVar pTMean2_lep("pTMean2_lep", "pTMean2_lep", 
+                            input.pTRECO2_lep, max(5.0, input.pTRECO2_lep-2*input.pTErr2_lep), input.pTRECO2_lep+2*input.pTErr2_lep);
+     RooRealVar pTSigma1_lep("pTSigma1_lep", "pTSigma1_lep", input.pTErr1_lep);
+     RooRealVar pTSigma2_lep("pTSigma2_lep", "pTSigma2_lep", input.pTErr2_lep);
+     RooRealVar theta1_lep("theta1_lep", "theta1_lep", input.theta1_lep);
+     RooRealVar theta2_lep("theta2_lep", "theta2_lep", input.theta2_lep);
+     RooRealVar phi1_lep("phi1_lep", "phi1_lep", input.phi1_lep);
+     RooRealVar phi2_lep("phi2_lep", "phi2_lep", input.phi2_lep);
+     RooRealVar m1("m1", "m1", input.m1);
+     RooRealVar m2("m2", "m2", input.m2);
+
+     //gamma
+     RooRealVar pTRECO1_gamma("pTRECO1_gamma", "pTRECO1_gamma", input.pTRECO1_gamma, 5, 500);
+     RooRealVar pTRECO2_gamma("pTRECO2_gamma", "pTRECO2_gamma", input.pTRECO2_gamma, 5, 500);
+     RooRealVar pTMean1_gamma("pTMean1_gamma", "pTMean1_gamma", 
+                              input.pTRECO1_gamma, max(0.5, input.pTRECO1_gamma-2*input.pTErr1_gamma), input.pTRECO1_gamma+2*input.pTErr1_gamma);
+     RooRealVar pTMean2_gamma("pTMean2_gamma", "pTMean2_gamma", 
+                              input.pTRECO2_gamma, max(0.5, input.pTRECO2_gamma-2*input.pTErr2_gamma), input.pTRECO2_gamma+2*input.pTErr2_gamma);
+     RooRealVar pTSigma1_gamma("pTSigma1_gamma", "pTSigma1_gamma", input.pTErr1_gamma);
+     RooRealVar pTSigma2_gamma("pTSigma2_gamma", "pTSigma2_gamma", input.pTErr2_gamma);
+     RooRealVar theta1_gamma("theta1_gamma", "theta1_gamma", input.theta1_gamma);
+     RooRealVar theta2_gamma("theta2_gamma", "theta2_gamma", input.theta2_gamma);
+     RooRealVar phi1_gamma("phi1_gamma", "phi1_gamma", input.phi1_gamma);
+     RooRealVar phi2_gamma("phi2_gamma", "phi2_gamma", input.phi2_gamma);
+
+     //gauss
+     RooGaussian gauss1_lep("gauss1_lep", "gauss1_lep", pTRECO1_lep, pTMean1_lep, pTSigma1_lep);
+     RooGaussian gauss2_lep("gauss2_lep", "gauss2_lep", pTRECO2_lep, pTMean2_lep, pTSigma2_lep);
+     RooGaussian gauss1_gamma("gauss1_gamma", "gauss1_gamma", pTRECO1_gamma, pTMean1_gamma, pTSigma1_gamma);
+     RooGaussian gauss2_gamma("gauss2_gamma", "gauss2_gamma", pTRECO2_gamma, pTMean2_gamma, pTSigma2_gamma);
+
+
+     TString makeE_lep = "TMath::Sqrt((@0*@0)/((TMath::Sin(@1))*(TMath::Sin(@1)))+@2*@2)";
+     RooFormulaVar E1_lep("E1_lep", makeE_lep, RooArgList(pTMean1_lep, theta1_lep, m1));  //w.import(E1_lep);
+     RooFormulaVar E2_lep("E2_lep", makeE_lep, RooArgList(pTMean2_lep, theta2_lep, m2));  //w.import(E2_lep);
+
+     TString makeE_gamma = "TMath::Sqrt((@0*@0)/((TMath::Sin(@1))*(TMath::Sin(@1))))";
+     RooFormulaVar E1_gamma("E1_gamma", makeE_gamma, RooArgList(pTMean1_gamma, theta1_gamma));  //w.import(E1_gamma);
+     RooFormulaVar E2_gamma("E2_gamma", makeE_gamma, RooArgList(pTMean2_gamma, theta2_gamma));  //w.import(E2_gamma);
+
+     //dotProduct 3d
+     TString dotProduct_3d = "@0*@1*( ((TMath::Cos(@2))*(TMath::Cos(@3)))/((TMath::Sin(@2))*(TMath::Sin(@3)))+(TMath::Cos(@4-@5)))";
+     RooFormulaVar p1v3D2("p1v3D2", dotProduct_3d, RooArgList(pTMean1_lep, pTMean2_lep, theta1_lep, theta2_lep, phi1_lep, phi2_lep));
+     RooFormulaVar p1v3Dph1("p1v3Dph1", dotProduct_3d, RooArgList(pTMean1_lep, pTMean1_gamma, theta1_lep, theta1_gamma, phi1_lep, phi1_gamma));
+     RooFormulaVar p2v3Dph1("p2v3Dph1", dotProduct_3d, RooArgList(pTMean2_lep, pTMean1_gamma, theta2_lep, theta1_gamma, phi2_lep, phi1_gamma));
+     RooFormulaVar p1v3Dph2("p1v3Dph2", dotProduct_3d, RooArgList(pTMean1_lep, pTMean2_gamma, theta1_lep, theta2_gamma, phi1_lep, phi2_gamma));
+     RooFormulaVar p2v3Dph2("p2v3Dph2", dotProduct_3d, RooArgList(pTMean2_lep, pTMean2_gamma, theta2_lep, theta2_gamma, phi2_lep, phi2_gamma));
+     RooFormulaVar ph1v3Dph2("ph1v3Dph2", dotProduct_3d, RooArgList(pTMean1_gamma, pTMean2_gamma, theta1_gamma, theta2_gamma, phi1_gamma, phi2_gamma));
+
+     TString dotProduct_4d = "@0*@1-@2";
+     RooFormulaVar p1D2("p1D2", dotProduct_4d, RooArgList(E1_lep, E2_lep, p1v3D2));  //w.import(p1D2);
+     RooFormulaVar p1Dph1("p1Dph1", dotProduct_4d, RooArgList(E1_lep, E1_gamma, p1v3Dph1));//  w.import(p1Dph1);
+     RooFormulaVar p2Dph1("p2Dph1", dotProduct_4d, RooArgList(E2_lep, E1_gamma, p2v3Dph1)); // w.import(p2Dph1);
+     RooFormulaVar p1Dph2("p1Dph2", dotProduct_4d, RooArgList(E1_lep, E2_gamma, p1v3Dph2));  //w.import(p1Dph2);
+     RooFormulaVar p2Dph2("p2Dph2", dotProduct_4d, RooArgList(E2_lep, E2_gamma, p2v3Dph2));  //w.import(p2Dph2);
+     RooFormulaVar ph1Dph2("ph1Dph2", dotProduct_4d, RooArgList(E1_gamma, E2_gamma, ph1v3Dph2)); // w.import(ph1Dph2);
+
+     RooRealVar bwMean("bwMean", "m_{Z^{0}}", 91.187); //w.import(bwMean);
+     RooRealVar bwGamma("bwGamma", "#Gamma", 2.5); 
+
+
+     RooProdPdf* PDFRelBW;  
+     RooFormulaVar* mZ;
+     RooGenericPdf* RelBW;
+
+     //mZ
+     mZ = new RooFormulaVar("mZ", "TMath::Sqrt(2*@0+@1*@1+@2*@2)", RooArgList(p1D2, m1, m2));
+     RelBW = new RooGenericPdf("RelBW","1/( pow(mZ*mZ-bwMean*bwMean,2)+pow(mZ,4)*pow(bwGamma/bwMean,2) )", RooArgSet(*mZ,bwMean,bwGamma) );
+     PDFRelBW = new RooProdPdf("PDFRelBW", "PDFRelBW", RooArgList(gauss1_lep, gauss2_lep, *RelBW));     
+
+     if (input.nFsr == 1) {
+
+        mZ = new RooFormulaVar("mZ", "TMath::Sqrt(2*@0+2*@1+2*@2+@3*@3+@4*@4)", RooArgList(p1D2, p1Dph1, p2Dph1, m1, m2));
+        RelBW = new RooGenericPdf("RelBW","1/( pow(mZ*mZ-bwMean*bwMean,2)+pow(mZ,4)*pow(bwGamma/bwMean,2) )", RooArgSet(*mZ,bwMean,bwGamma) );
+//        PDFRelBW = new RooProdPdf("PDFRelBW", "PDFRelBW", RooArgList(gauss1_lep, gauss2_lep, gauss1_gamma, *RelBW));
+
+        } 
+
+     if (input.nFsr == 2) {
+
+        mZ = new RooFormulaVar("mZ", "TMath::Sqrt(2*@0+2*@1+2*@2+2*@3+2*@4+2*@5+@6*@6+@7*@7)", RooArgList(p1D2,p1Dph1,p2Dph1,p1Dph2,p2Dph2,ph1Dph2, m1, m2));
+        RelBW = new RooGenericPdf("RelBW","1/( pow(mZ*mZ-bwMean*bwMean,2)+pow(mZ,4)*pow(bwGamma/bwMean,2) )", RooArgSet(*mZ,bwMean,bwGamma) );
+//        PDFRelBW = new RooProdPdf("PDFRelBW", "PDFRelBW", RooArgList(gauss1_lep, gauss2_lep, gauss1_gamma, gauss2_gamma, *RelBW));
+
+        }
+
+     //true shape
+     RooRealVar sg("sg", "sg", sgVal_);
+     RooRealVar a("a", "a", aVal_);
+     RooRealVar n("n", "n", nVal_);
+
+     RooCBShape CB("CB","CB",*mZ,bwMean,sg,a,n);
+     RooRealVar f("f","f", fVal_);
+
+     RooRealVar mean("mean","mean",meanVal_);
+     RooRealVar sigma("sigma","sigma",sigmaVal_);
+     RooRealVar f1("f1","f1",f1Val_);
+
+     RooAddPdf *RelBWxCB;
+     RelBWxCB = new RooAddPdf("RelBWxCB","RelBWxCB", *RelBW, CB, f);
+     RooGaussian *gauss;
+     gauss = new RooGaussian("gauss","gauss",*mZ,mean,sigma);
+     RooAddPdf *RelBWxCBxgauss;
+     RelBWxCBxgauss = new RooAddPdf("RelBWxCBxgauss","RelBWxCBxgauss", *RelBWxCB, *gauss, f1);
+
+     RooProdPdf *PDFRelBWxCBxgauss;
+     PDFRelBWxCBxgauss = new RooProdPdf("PDFRelBWxCBxgauss","PDFRelBWxCBxgauss", 
+                                     RooArgList(gauss1_lep, gauss2_lep, *RelBWxCBxgauss) );
+
+
+    //make fit
+    RooArgSet *rastmp;
+    rastmp = new RooArgSet(pTRECO1_lep, pTRECO2_lep);
 /*
-void KinZfitter::KinRefitZZ(std::vector< pat::Muon > selectedMuons, std::vector< pat::Electron > selectedElectrons, std::vector< pat::PFParticle > selectedZ1FsrPhotons, std::vector< pat::PFParticle > selectedZ2FsrPhotons)
-}
+    if(input.nFsr == 1) {
+      rastmp = new RooArgSet(pTRECO1_lep, pTRECO2_lep, pTRECO1_gamma);
+      }
+
+    if(input.nFsr == 2) {
+      rastmp = new RooArgSet(pTRECO1_lep, pTRECO2_lep, pTRECO1_gamma, pTRECO2_gamma);
+      }
 */
+    RooDataSet* pTs = new RooDataSet("pTs","pTs", *rastmp);
+    pTs->add(*rastmp);
+
+    RooFitResult* r;
+    if (mass4lRECO_ > 140) {
+
+       r = PDFRelBW->fitTo(*pTs,RooFit::Save(),RooFit::PrintLevel(-1));
+
+       } else {
+
+              r = PDFRelBWxCBxgauss->fitTo(*pTs,RooFit::Save(),RooFit::PrintLevel(-1));
+
+              }
+    //save fit result
+    const TMatrixDSym& covMatrix = r->covarianceMatrix();
+    const RooArgList& finalPars = r->floatParsFinal();
+
+    for (int i=0 ; i<finalPars.getSize(); i++){
+ 
+        TString name = TString(((RooRealVar*)finalPars.at(i))->GetName());
+        if(debug_) cout<<"name list of RooRealVar for covariance matrix "<<name<<endl;
+
+    }
+
+    int size = covMatrix.GetNcols();
+    output.covMatrixZ.ResizeTo(size,size);
+    output.covMatrixZ = covMatrix;
+    
+    output.pT1_lep = pTMean1_lep.getVal();
+    output.pT2_lep = pTMean2_lep.getVal();
+    output.pTErr1_lep = pTMean1_lep.getError();
+    output.pTErr2_lep = pTMean2_lep.getError();
+/*
+    if (input.nFsr >= 1) {
+
+       output.pT1_gamma = pTMean1_gamma.getVal();
+       output.pTErr1_gamma = pTMean1_gamma.getError();
+    
+       }
+
+    if (input.nFsr == 2) {
+
+       output.pT2_gamma = pTMean2_gamma.getVal();
+       output.pTErr2_gamma = pTMean2_gamma.getError();
+
+       }
+*/
+    delete rastmp;
+    delete pTs;
+    delete PDFRelBW;
+    delete mZ;
+    delete RelBW;
+    delete RelBWxCB;
+    delete gauss;
+    delete RelBWxCBxgauss;
+    delete PDFRelBWxCBxgauss;
+}
+
+bool KinZfitter::IsFourEFourMu(vector<int> &Z1id, vector<int> &Z2id) {
+
+     bool flag = false;
+
+     if (abs(Z1id[0]) == abs(Z2id[0])) {
+
+        flag = true;
+
+        }
+
+     return flag;
+}
+
+void  KinZfitter::RepairZ1Z2(vector<TLorentzVector> &Z1Lep, vector<double> &Z1LepErr,
+                             vector<TLorentzVector> &Z1Gamma, vector<double> &Z1GammaErr,
+                             vector<TLorentzVector> &Z2Lep, vector<double> &Z2LepErr,
+                             vector<TLorentzVector> &Z2Gamma, vector<double> &Z2GammaErr,
+                             vector<int> &Z1id, vector<int> &Z2id) {
+
+      typedef pair<int, TLorentzVector> Lep;
+      typedef pair<Lep, Lep> Z;
+      typedef pair<double, double> ZLepErr;
+
+      Lep lep1, lep2, lep3, lep4;
+      lep1 = make_pair(Z1id[0], Z1Lep[0]);
+      lep2 = make_pair(Z1id[1], Z1Lep[1]);
+      lep3 = make_pair(Z2id[0], Z2Lep[0]);
+      lep4 = make_pair(Z2id[1], Z2Lep[1]);
+
+      Z Z1_cfg1, Z2_cfg1, Z1_cfg2, Z2_cfg2;
+      Z1_cfg1 = make_pair(lep1, lep2); 
+      Z2_cfg1 = make_pair(lep3, lep4);
+
+      ZLepErr Z1LepErr_cfg1, Z2LepErr_cfg1, Z1LepErr_cfg2, Z2LepErr_cfg2;
+      Z1LepErr_cfg1 = make_pair(Z1LepErr[0], Z1LepErr[1]);
+      Z2LepErr_cfg1 = make_pair(Z2LepErr[0], Z2LepErr[1]);
+
+//      Z1_cfg2 = make_pair(lep1, (lep1.first + lep3.first == 0) ? lep3 : lep4);
+//      Z2_cfg2 = make_pair(lep2, (lep2.first + lep4.first == 0) ? lep4 : lep3);
+      if (lep1.first + lep3.first == 0) {
+
+         Z1_cfg2 = make_pair(lep1, lep3);
+         Z1LepErr_cfg2 = make_pair(Z1LepErr[0], Z2LepErr[0]);
+         Z2_cfg2 = make_pair(lep2, lep4);
+         Z2LepErr_cfg2 = make_pair(Z1LepErr[1], Z2LepErr[1]);
+
+         } else { 
+
+                Z1_cfg2 = make_pair(lep1, lep4);
+                Z1LepErr_cfg2 = make_pair(Z1LepErr[0], Z2LepErr[1]);
+                Z2_cfg2 = make_pair(lep2, lep3);
+                Z2LepErr_cfg2 = make_pair(Z1LepErr[1], Z2LepErr[0]);
+
+                }
+
+/*      ZLepErr Z1LepErr_cfg1, Z2LepErr_cfg1, Z1LepErr_cfg2, Z2LepErr_cfg2;
+      Z1LepErr_cfg1 = make_pair(Z1LepErr[0], Z1LepErr[1]);
+      Z2LepErr_cfg1 = make_pair(Z2LepErr[0], Z2LepErr[1]);
+
+      Z1LepErr_cfg2 = make_pair(Z1LepErr[0], (lep1.first + lep3.first == 0) ? Z2LepErr[0] : Z2LepErr[1]);
+      Z2LepErr_cfg2 = make_pair(Z1LepErr[1], (lep2.first + lep4.first == 0) ? Z2LepErr[1] : Z2LepErr[0]);
+*/
+      double massZ1_cfg1 = (Z1_cfg1.first.second + Z1_cfg1.second.second).M();
+      double massZ2_cfg1 = (Z2_cfg1.first.second + Z2_cfg1.second.second).M();
+      double massZ1_cfg2 = (Z1_cfg2.first.second + Z1_cfg2.second.second).M();
+      double massZ2_cfg2 = (Z2_cfg2.first.second + Z2_cfg2.second.second).M();
+
+//      double massZDiff_cfg1 = abs(massZ1_cfg1-massZ2_cfg1);
+//      double massZDiff_cfg2 = abs(massZ1_cfg2-massZ2_cfg2);
+      double massZDiff_cfg1 = abs(massZ1_cfg1-91.2) + abs(massZ2_cfg1-91.2);
+      double massZDiff_cfg2 = abs(massZ1_cfg2-91.2) + abs(massZ2_cfg2-91.2);
+
+      if (debug_) cout << "massZdiff_cfg1: " << massZDiff_cfg1 << ", massZdiff_cfg2: " << massZDiff_cfg2 << endl;
+      if (debug_) cout << "Z1lep2Pt_cfg2: "  << Z1_cfg2.second.second.Pt() << ", Z2lep2Pt_cfg2: " << Z2_cfg2.second.second.Pt() << endl;
+
+      if (massZDiff_cfg1 > massZDiff_cfg2) {
+
+         Z1id[0] = Z1_cfg2.first.first;
+         Z1Lep[0] = Z1_cfg2.first.second; 
+         Z1LepErr[0] = Z1LepErr_cfg2.first; 
+
+         Z1id[1] = Z1_cfg2.second.first;
+         Z1Lep[1] = Z1_cfg2.second.second; 
+         Z1LepErr[1] = Z1LepErr_cfg2.second;
+
+         Z2id[0] = Z2_cfg2.first.first;
+         Z2Lep[0] = Z2_cfg2.first.second; 
+         Z2LepErr[0] = Z2LepErr_cfg2.first;
+
+         Z2id[1] = Z2_cfg2.second.first;
+         Z2Lep[1] = Z2_cfg2.second.second;
+         Z2LepErr[1] = Z2LepErr_cfg2.second;
+
+         }
+}
+
 
 int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double & lph2)
 {
@@ -526,7 +1017,7 @@ int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double 
     l1= 1.0; l2 = 1.0;
     lph1 = 1.0; lph2 = 1.0;
 
-    if(debug_) cout<<"start Z1 refit"<<endl;
+    if(debug_) cout<<"start Z refit"<<endl;
 
     TLorentzVector Z1_1 = p4sZ1_[0]; TLorentzVector Z1_2 = p4sZ1_[1];
 
