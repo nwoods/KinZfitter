@@ -12,17 +12,12 @@ To include the refit in your analyzer:
 
   cd $CMSSW_BASE/src
   
-  git clone https://github.com/tocheng/KinZfitter.git
+  git clone https://github.com/mhl0116/KinZfitter.git
    
-  cd KinZfitter
-  
-  git checkout -b from-v1.0 v1.0
-  
   cd ../
   
   scram b -j 8 
   
-(Tag for Moriond 2016 will be named as v1.x )
 
 In your main analyzer:
 
@@ -77,7 +72,7 @@ In your main analyzer:
    In your analyzer, do
 
       kinZfitter->Setup(selectedLeptons, selectedFsrMap);
-      kinZfitter->KinRefitZ1();
+      kinZfitter->KinRefitZ();
       
       // refit mass4l
       double mass4lREFIT = kinZfitter->GetRefitM4l();
@@ -97,9 +92,6 @@ In your main analyzer:
   
   double massZ1REFIT = kinZfitter->GetRefitMZ1();
   
-  massZ1Err
+  massZ2REFIT
 
-  double massZ1Err = kinZfitter->GetMZ1Err();
-
-
-
+  double massZ2REFIT = kinZfitter->GetRefitMZ2();
