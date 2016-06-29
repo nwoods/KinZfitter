@@ -60,7 +60,11 @@ public:
 
 	/// Kinematic fit of lepton momenta
         /// HelperFunction class to calcluate per lepton(+photon) pT error
-        void Setup(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons);
+        void Setup(const std::vector< const reco::Candidate* >& selectedLeptons, 
+                   const std::map<unsigned int, TLorentzVector>& selectedFsrPhotons);
+        /// For backwards compatibility
+        void Setup(const std::vector< reco::Candidate* >& selectedLeptons, 
+                   const std::map<unsigned int, TLorentzVector>& selectedFsrPhotons);
 
         ///
         void KinRefitZ();
@@ -70,17 +74,17 @@ public:
                         double l3, double l4, double lph3, double lph4);
 
         // result wrappers
-        double GetRefitM4l();
-        double GetM4l();
-        double GetRefitMZ1();
-        double GetRefitMZ2();
-        double GetMZ1();
-        double GetMZ2();
+        double GetRefitM4l() const;
+        double GetM4l() const;
+        double GetRefitMZ1() const;
+        double GetRefitMZ2() const;
+        double GetMZ1() const;
+        double GetMZ2() const;
 
-        double GetMZ1Err();
-        double GetRefitM4lErr();
-        double GetM4lErr();
-        double GetRefitM4lErrFullCov();
+        double GetMZ1Err() const;
+        double GetRefitM4lErr() const;
+        double GetM4lErr() const;
+        double GetRefitM4lErrFullCov() const;
 
         // cov matrix change for spherical coordinate to Cartisean coordinates
 
@@ -99,8 +103,8 @@ public:
         TMatrixDSym GetRefitZZOFBigCov();
 */
 
-        std::vector<TLorentzVector> GetRefitP4s();
-        std::vector<TLorentzVector> GetP4s();
+        std::vector<TLorentzVector> GetRefitP4s() const;
+        std::vector<TLorentzVector> GetP4s() const;
 
         ////////////////
 
@@ -147,11 +151,12 @@ private:
         /// HelperFunction class to calcluate per lepton(+photon) pT error
         HelperFunction * helperFunc_;
 
-        void initZs(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhoton);
+        void initZs(const std::vector< const reco::Candidate* >& selectedLeptons, 
+                    const std::map<unsigned int, TLorentzVector>& selectedFsrPhoton);
      
         void SetFitInput(FitInput &input,
-                         vector<TLorentzVector> ZLep, vector<double> ZLepErr,
-                         vector<TLorentzVector> ZGamma, vector<double> ZGammaErr);
+                         const vector<TLorentzVector>& ZLep, const vector<double>& ZLepErr,
+                         const vector<TLorentzVector>& ZGamma, const vector<double>& ZGammaErr);
 
         void SetFitOutput(FitInput &input, FitOutput &output,
                           double &l1, double &l2, double &lph1, double &lph2,
@@ -170,7 +175,7 @@ private:
                         vector<TLorentzVector> &Z2Gamma, vector<double> &Z2GammaErr,
                         vector<int> &Z1id, vector<int> &Z2id);
 
-        bool IsFourEFourMu(vector<int> &Z1id, vector<int> &Z2id);
+        bool IsFourEFourMu(const vector<int> &Z1id, const vector<int> &Z2id) const;
         /// lepton ids for Z1 Z2
         std::vector<int> idsZ1_, idsZ2_;
         /// lepton ids that fsr photon associated to

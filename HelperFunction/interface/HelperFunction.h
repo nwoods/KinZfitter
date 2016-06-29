@@ -94,18 +94,20 @@ class HelperFunction
       void setdebug(int d){debug_= d;};
 
       //ForZ
-      double pterr(reco::Candidate *c, bool isData);
+      double pterr(const reco::Candidate *c, bool isData) const;
 
       //double pterr(pat::Electron electron, bool isData);
       //double pterr(pat::Muon muon, bool isData);
-      double pterr(TLorentzVector fsrPhoton);
+      double pterr(const TLorentzVector& fsrPhoton) const;
 
-      double pterr(reco::GsfElectron* electron, bool isData);
-      double pterr(reco::Muon* muon, bool isData);
+      double pterr(const reco::GsfElectron* electron, bool isData) const;
+      double pterr(const reco::Muon* muon, bool isData) const;
 
-      double masserror(std::vector<TLorentzVector> p4s, std::vector<double> pTErrs);
+      double masserror(const std::vector<TLorentzVector>& p4s, 
+                       const std::vector<double>& pTErrs) const;
 
-      double masserrorFullCov(std::vector<TLorentzVector> p4s, TMatrixDSym covMatrix);
+      double masserrorFullCov(const std::vector<TLorentzVector>& p4s, 
+                              TMatrixDSym& covMatrix) const;
 
       //double masserror(std::vector<TLorentzVector> p4s, )
 

@@ -34,7 +34,8 @@ KinZfitter::KinZfitter(bool isData)
 }
 
 
-void KinZfitter::Setup(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons){
+void KinZfitter::Setup(const std::vector< const reco::Candidate* >& selectedLeptons, 
+                       const std::map<unsigned int, TLorentzVector>& selectedFsrPhotons){
 
      // reset everything for each event
      idsZ1_.clear(); idsZ2_.clear();      
@@ -93,11 +94,21 @@ void KinZfitter::Setup(std::vector< reco::Candidate* > selectedLeptons, std::map
 }
 
 
+void KinZfitter::Setup(const std::vector< reco::Candidate* >& selectedLeptons, 
+                       const std::map<unsigned int, TLorentzVector>& selectedFsrPhotons){
+  
+  // copy whole vector to make each element const separately
+  std::vector<const reco::Candidate*> temp(selectedLeptons.begin(), 
+                                           selectedLeptons.end());
+  Setup(temp, selectedFsrPhotons);
+}
+
 
 ///----------------------------------------------------------------------------------------------
 ///----------------------------------------------------------------------------------------------
 
-void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, std::map<unsigned int, TLorentzVector> selectedFsrPhotons){
+void KinZfitter::initZs(const std::vector< const reco::Candidate* >& selectedLeptons, 
+                        const std::map<unsigned int, TLorentzVector>& selectedFsrPhotons){
 
         if(debug_) cout<<"init leptons"<<endl;
 
@@ -105,7 +116,7 @@ void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, std::ma
          {
             double pTerr = 0; TLorentzVector p4;
 
-            reco::Candidate * c = selectedLeptons[il];              
+            const reco::Candidate * c = selectedLeptons[il];              
             pTerr = helperFunc_->pterr(c ,  isData_);
             p4.SetPxPyPzE(c->px(),c->py(),c->pz(),c->energy());  
             int pdgId = c->pdgId();
@@ -132,8 +143,8 @@ void KinZfitter::initZs(std::vector< reco::Candidate* > selectedLeptons, std::ma
         for(unsigned int ifsr = 0; ifsr<4; ifsr++)
          {
 
-            TLorentzVector p4 = selectedFsrPhotons[ifsr];
-            if(selectedFsrPhotons[ifsr].Pt()==0) continue;
+            if(selectedFsrPhotons.find(ifsr) == selectedFsrPhotons.end()) continue;
+            TLorentzVector p4 = selectedFsrPhotons.at(ifsr);
 
             if(debug_) cout<<"ifsr "<<ifsr<<endl;
 
@@ -235,7 +246,7 @@ void KinZfitter::SetZResult(double l1, double l2, double lph1, double lph2,
   if(debug_) cout<<"end set Z1 result"<<endl;
 }
 
-double KinZfitter::GetM4l()
+double KinZfitter::GetM4l() const
 {
 
   vector<TLorentzVector> p4s = GetP4s();
@@ -250,7 +261,7 @@ double KinZfitter::GetM4l()
 }
 
 
-double KinZfitter::GetRefitM4l()
+double KinZfitter::GetRefitM4l() const
 {
 
   vector<TLorentzVector> p4s = GetRefitP4s();
@@ -264,7 +275,7 @@ double KinZfitter::GetRefitM4l()
 
 }
 
-double KinZfitter::GetRefitMZ1()
+double KinZfitter::GetRefitMZ1() const
 {
 
   vector<TLorentzVector> p4s = GetRefitP4s();
@@ -276,7 +287,7 @@ double KinZfitter::GetRefitMZ1()
   return pZ1.M();
 
 }
-double KinZfitter::GetRefitMZ2()
+double KinZfitter::GetRefitMZ2() const
 {
 
   vector<TLorentzVector> p4s = GetRefitP4s();
@@ -289,7 +300,7 @@ double KinZfitter::GetRefitMZ2()
 
 }
 
-double KinZfitter::GetMZ1()
+double KinZfitter::GetMZ1() const
 {
 
   vector<TLorentzVector> p4s = GetP4s();
@@ -301,7 +312,7 @@ double KinZfitter::GetMZ1()
   return pZ1.M();
 
 }
-double KinZfitter::GetMZ2()
+double KinZfitter::GetMZ2() const
 {
 
   vector<TLorentzVector> p4s = GetP4s();
@@ -315,7 +326,7 @@ double KinZfitter::GetMZ2()
 }
 
 
-double KinZfitter::GetRefitM4lErr()
+double KinZfitter::GetRefitM4lErr() const
 {
 
   vector<TLorentzVector> p4s;
@@ -349,7 +360,7 @@ double KinZfitter::GetRefitM4lErr()
 
 }
 
-double KinZfitter::GetRefitM4lErrFullCov()
+double KinZfitter::GetRefitM4lErrFullCov() const
 {
 
 
@@ -460,7 +471,7 @@ double KinZfitter::GetRefitM4lErrFullCov()
   
 }
 
-double KinZfitter::GetM4lErr()
+double KinZfitter::GetM4lErr() const
 {
   
   vector<TLorentzVector> p4s;
@@ -490,7 +501,7 @@ double KinZfitter::GetM4lErr()
 
 }
 
-double KinZfitter::GetMZ1Err()
+double KinZfitter::GetMZ1Err() const
 {
 
   vector<TLorentzVector> p4s;
@@ -511,7 +522,7 @@ double KinZfitter::GetMZ1Err()
 }
 
 
-vector<TLorentzVector> KinZfitter::GetRefitP4s()
+vector<TLorentzVector> KinZfitter::GetRefitP4s() const
 {
 
   TLorentzVector Z1_1 = p4sZ1REFIT_[0]; TLorentzVector Z1_2 = p4sZ1REFIT_[1];
@@ -547,7 +558,7 @@ vector<TLorentzVector> KinZfitter::GetRefitP4s()
 
 }
 
-vector<TLorentzVector> KinZfitter::GetP4s()
+vector<TLorentzVector> KinZfitter::GetP4s() const
 {
 
   TLorentzVector Z1_1 = p4sZ1_[0]; TLorentzVector Z1_2 = p4sZ1_[1];
@@ -612,13 +623,12 @@ void KinZfitter::KinRefitZ()
             if (fourEfourMu) {//4e,4mu, do reshuffle
 
                RepairZ1Z2(p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_, idsZ1_, idsZ2_);
-
+               
                }
        
             SetFitInput(fitInput1, p4sZ1_, pTerrsZ1_, p4sZ1ph_, pTerrsZ1ph_);
             Driver(fitInput1, fitOutput1);
             SetFitOutput(fitInput1, fitOutput1, l1, l2, lph1, lph2, pTerrsZ1REFIT_, pTerrsZ1phREFIT_, covMatrixZ1_);
-
             SetFitInput(fitInput2, p4sZ2_, pTerrsZ2_, p4sZ2ph_, pTerrsZ2ph_);
             Driver(fitInput2, fitOutput2);
             SetFitOutput(fitInput2, fitOutput2, l3, l4, lph3, lph4, pTerrsZ2REFIT_, pTerrsZ2phREFIT_, covMatrixZ2_);
@@ -641,8 +651,8 @@ void  KinZfitter::Driver(KinZfitter::FitInput &input, KinZfitter::FitOutput &out
 
 
 void  KinZfitter::SetFitInput(KinZfitter::FitInput &input, 
-                              vector<TLorentzVector> ZLep, vector<double> ZLepErr,
-                              vector<TLorentzVector> ZGamma, vector<double> ZGammaErr) {
+                              const vector<TLorentzVector>& ZLep, const vector<double>& ZLepErr,
+                              const vector<TLorentzVector>& ZGamma, const vector<double>& ZGammaErr) {
 
       TLorentzVector lep1 = ZLep[0]; TLorentzVector lep2 = ZLep[1];
 
@@ -914,7 +924,7 @@ void KinZfitter::MakeModel(/*RooWorkspace &w,*/ KinZfitter::FitInput &input, Kin
     delete PDFRelBWxCBxgauss;
 }
 
-bool KinZfitter::IsFourEFourMu(vector<int> &Z1id, vector<int> &Z2id) {
+bool KinZfitter::IsFourEFourMu(const vector<int> &Z1id, const vector<int> &Z2id) const{
 
      bool flag = false;
 

@@ -78,7 +78,8 @@ HelperFunction::~HelperFunction()
 // member functions
 //
 
-double HelperFunction:: masserrorFullCov(std::vector<TLorentzVector> p4s, TMatrixDSym covMatrix){
+double HelperFunction:: masserrorFullCov(const std::vector<TLorentzVector>& p4s, 
+                                         TMatrixDSym& covMatrix) const {
 
         int ndim = 3*p4s.size();
         if(debug_) cout<<""<<endl;
@@ -117,7 +118,8 @@ double HelperFunction:: masserrorFullCov(std::vector<TLorentzVector> p4s, TMatri
 }
 
 
-double HelperFunction::masserror( std::vector<TLorentzVector> Lep, std::vector<double> pterr){
+double HelperFunction::masserror( const std::vector<TLorentzVector>& Lep, 
+                                  const std::vector<double>& pterr) const {
         // if(Lep.size()!= pterr.size()!=4) {std::cout<<" Lepsize="<<Lep.size()<<", "<<pterr.size()<<std::endl;}
         TLorentzVector compositeParticle ;
         for(unsigned int i=0; i<Lep.size(); i++){
@@ -144,25 +146,25 @@ double HelperFunction::masserror( std::vector<TLorentzVector> Lep, std::vector<d
 }
 
 
-double HelperFunction::pterr( reco::Candidate *c, bool isData){
+double HelperFunction::pterr( const reco::Candidate *c, bool isData) const {
 
-  reco::GsfElectron *gsf; reco::Muon *mu;
-  reco::PFCandidate *pf;
+  const reco::GsfElectron *gsf; const reco::Muon *mu;
+  const reco::PFCandidate *pf;
 
-  pat::Muon *patmu;
+  const pat::Muon *patmu;
 
   double pterrLep = 0.0;
 
-  if ((gsf = dynamic_cast<reco::GsfElectron *> (&(*c)) ) != 0)
+  if ((gsf = dynamic_cast<const reco::GsfElectron *> (&(*c)) ) != 0)
   {
     pterrLep=pterr(gsf, isData);
   }
-  else if ((mu = dynamic_cast<reco::Muon *> (&(*c)) ) != 0)
+  else if ((mu = dynamic_cast<const reco::Muon *> (&(*c)) ) != 0)
   {
     pterrLep=pterr(mu, isData);
     if(debug_)cout<<"reco pt err is "<<pterrLep<<endl;
 
-    if( (patmu = dynamic_cast<pat::Muon *> (&(*c)) )!=0){
+    if( (patmu = dynamic_cast<const pat::Muon *> (&(*c)) )!=0){
 
      if ( patmu->hasUserFloat("correctedPtError") == true ) {
        if(debug_) cout<<"use userFloat for muon pt err"<<endl;
@@ -172,7 +174,7 @@ double HelperFunction::pterr( reco::Candidate *c, bool isData){
  
     }
   }
-  else if ((pf = dynamic_cast<reco::PFCandidate *> (&(*c)) ) != 0)
+  else if ((pf = dynamic_cast<const reco::PFCandidate *> (&(*c)) ) != 0)
   { 
     pterrLep=pterr(c, isData);
   }
@@ -182,14 +184,14 @@ double HelperFunction::pterr( reco::Candidate *c, bool isData){
 
 }
 
-double HelperFunction::pterr( reco::Muon* mu, bool isData){
+double HelperFunction::pterr( const reco::Muon* mu, bool isData) const {
 
         double pterr = mu->muonBestTrack()->ptError();
 
         return pterr;
 }
 
-double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
+double HelperFunction::pterr( const reco::GsfElectron * elec, bool isData ) const {
 
         if(debug_) cout<<"reco:gsfelectron pt err"<<endl; 
 
@@ -224,7 +226,7 @@ double HelperFunction::pterr( reco::GsfElectron * elec, bool isData ){
 }
 
 
-double HelperFunction::pterr(TLorentzVector ph){
+double HelperFunction::pterr(const TLorentzVector& ph) const {
 
          if(debug_) cout<<"perr for pf photon"<<endl;
 
