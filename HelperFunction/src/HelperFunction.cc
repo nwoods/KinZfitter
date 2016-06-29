@@ -178,6 +178,11 @@ double HelperFunction::pterr( const reco::Candidate *c, bool isData) const {
   { 
     pterrLep=pterr(c, isData);
   }
+  else
+    throw cms::Exception("InvalidCast") << "KinZFitter only takes particles "
+                                        << "whose pointers can be cast to "
+                                        << "electrons, muons, or PFCandidates"
+                                        << std::endl;
 
 
   return pterrLep;
