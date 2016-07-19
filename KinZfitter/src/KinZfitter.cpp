@@ -34,6 +34,11 @@ KinZfitter::KinZfitter(bool isData)
 }
 
 
+KinZfitter::~KinZfitter()
+{
+  delete helperFunc_;
+}
+
 void KinZfitter::Setup(const std::vector< const reco::Candidate* >& selectedLeptons, 
                        const std::map<unsigned int, TLorentzVector>& selectedFsrPhotons){
 
@@ -815,6 +820,8 @@ void KinZfitter::MakeModel(/*RooWorkspace &w,*/ KinZfitter::FitInput &input, Kin
      PDFRelBW = new RooProdPdf("PDFRelBW", "PDFRelBW", RooArgList(gauss1_lep, gauss2_lep, *RelBW));     
 
      if (input.nFsr == 1) {
+        delete mZ;
+        delete RelBW;
 
         mZ = new RooFormulaVar("mZ", "TMath::Sqrt(2*@0+2*@1+2*@2+@3*@3+@4*@4)", RooArgList(p1D2, p1Dph1, p2Dph1, m1, m2));
         RelBW = new RooGenericPdf("RelBW","1/( pow(mZ*mZ-bwMean*bwMean,2)+pow(mZ,4)*pow(bwGamma/bwMean,2) )", RooArgSet(*mZ,bwMean,bwGamma) );
@@ -823,6 +830,8 @@ void KinZfitter::MakeModel(/*RooWorkspace &w,*/ KinZfitter::FitInput &input, Kin
         } 
 
      if (input.nFsr == 2) {
+        delete mZ;
+        delete RelBW;
 
         mZ = new RooFormulaVar("mZ", "TMath::Sqrt(2*@0+2*@1+2*@2+2*@3+2*@4+2*@5+@6*@6+@7*@7)", RooArgList(p1D2,p1Dph1,p2Dph1,p1Dph2,p2Dph2,ph1Dph2, m1, m2));
         RelBW = new RooGenericPdf("RelBW","1/( pow(mZ*mZ-bwMean*bwMean,2)+pow(mZ,4)*pow(bwGamma/bwMean,2) )", RooArgSet(*mZ,bwMean,bwGamma) );
@@ -913,6 +922,8 @@ void KinZfitter::MakeModel(/*RooWorkspace &w,*/ KinZfitter::FitInput &input, Kin
 
        }
 */
+    if(r)
+      delete r;
     delete rastmp;
     delete pTs;
     delete PDFRelBW;
@@ -1172,13 +1183,14 @@ int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double 
     // mZ1
 
     RooFormulaVar* mZ1;
-    mZ1 = new RooFormulaVar("mZ1","TMath::Sqrt(2*@0+@1*@1+@2*@2)",RooArgList(p1D2,*m1,*m2));
     if(p4sZ1ph_.size()==1)
       mZ1 = new RooFormulaVar("mZ1","TMath::Sqrt(2*@0+2*@1+2*@2+@3*@3+@4*@4)",
                                     RooArgList(p1D2, p1Dph1, p2Dph1, *m1,*m2));
-    if(p4sZ1ph_.size()==2)
+    else if(p4sZ1ph_.size()==2)
       mZ1 = new RooFormulaVar("mZ1","TMath::Sqrt(2*@0+2*@1+2*@2+2*@3+2*@4+2*@5+@6*@6+@7*@7)",
                               RooArgList(p1D2,p1Dph1,p2Dph1,p1Dph2,p2Dph2,ph1Dph2, *m1,*m2));
+    else
+      mZ1 = new RooFormulaVar("mZ1","TMath::Sqrt(2*@0+@1*@1+@2*@2)",RooArgList(p1D2,*m1,*m2));
 
     if(debug_) cout<<"mZ1 is "<<mZ1->getVal()<<endl;
 
@@ -1217,22 +1229,24 @@ int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double 
     RooAddPdf RelBWxCBxgauss("RelBWxCBxgauss","RelBWxCBxgauss", RelBWxCB, gauss, f1);
 
     RooProdPdf *PDFRelBWxCBxgauss;
-    PDFRelBWxCBxgauss = new RooProdPdf("PDFRelBWxCBxgauss","PDFRelBWxCBxgauss", 
-                                     RooArgList(gauss1, gauss2, RelBWxCBxgauss) );
-    if(p4sZ1ph_.size()==1)    
+    if(p4sZ1ph_.size()==1)
       PDFRelBWxCBxgauss = new RooProdPdf("PDFRelBWxCBxgauss","PDFRelBWxCBxgauss", 
-                                     RooArgList(gauss1, gauss2, gaussph1, RelBWxCBxgauss) );
-    if(p4sZ1ph_.size()==2)
+                                         RooArgList(gauss1, gauss2, gaussph1, RelBWxCBxgauss) );
+    else if(p4sZ1ph_.size()==2)
       PDFRelBWxCBxgauss = new RooProdPdf("PDFRelBWxCBxgauss","PDFRelBWxCBxgauss", 
-                                     RooArgList(gauss1, gauss2, gaussph1, gaussph2, RelBWxCBxgauss) );
+                                         RooArgList(gauss1, gauss2, gaussph1, gaussph2, RelBWxCBxgauss) );
+    else
+      PDFRelBWxCBxgauss = new RooProdPdf("PDFRelBWxCBxgauss","PDFRelBWxCBxgauss", 
+                                         RooArgList(gauss1, gauss2, RelBWxCBxgauss) );
 
     // observable set
     RooArgSet *rastmp;
-      rastmp = new RooArgSet(*pT1RECO,*pT2RECO);
     if(p4sZ1ph_.size()==1)
       rastmp = new RooArgSet(*pT1RECO,*pT2RECO,*pTph1RECO);
-    if(p4sZ1ph_.size()>=2)
+    else if(p4sZ1ph_.size()>=2)
       rastmp = new RooArgSet(*pT1RECO,*pT2RECO,*pTph1RECO,*pTph2RECO);
+    else
+      rastmp = new RooArgSet(*pT1RECO,*pT2RECO);
 
     RooDataSet* pTs = new RooDataSet("pTs","pTs", *rastmp);
     pTs->add(*rastmp); 
@@ -1285,7 +1299,8 @@ int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double 
     }
 
     //delete nll;
-    delete r;
+    if(r)
+      delete r;
     delete mZ1;
     delete pT1; delete pT2; delete pTph1; delete pTph2;
     delete pT1RECO; delete pT2RECO; delete pTph1RECO; delete pTph2RECO;
@@ -1293,6 +1308,10 @@ int KinZfitter::PerZ1Likelihood(double & l1, double & l2, double & lph1, double 
     delete PDFRelBWxCBxgauss;
     delete pTs;
     delete rastmp;
+    delete m1; delete m2;
+    delete theta1; delete theta2; delete phi1; delete phi2;
+    delete thetaph1; delete thetaph2; delete phiph1; delete phiph2;
+    delete p1v3D2;
 
     if(debug_) cout<<"end Z1 refit"<<endl;
 

@@ -57,6 +57,7 @@ class KinZfitter {
 public:
 	
         KinZfitter(bool isData);
+        ~KinZfitter();
 
 	/// Kinematic fit of lepton momenta
         /// HelperFunction class to calcluate per lepton(+photon) pT error
